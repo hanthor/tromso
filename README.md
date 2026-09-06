@@ -6,14 +6,14 @@
 [`projectbluefin/dakota`](https://github.com/projectbluefin/dakota). It builds KDE Plasma 6 on top
 of freedesktop-sdk and publishes a bootable OCI image to `ghcr.io/tuna-os/tromso`.
 
-**Status: Builds successfully and boots to a working KDE Plasma 6 Wayland desktop.**
+**Status: Builds successfully and boots to a functional KDE Plasma 6 Wayland desktop.**
 
 ## Architecture
 
-Aurora Tromso is a single repo — all KDE/Plasma/freedesktop-sdk `.bst` elements
-live directly in `elements/`, consolidated in from the former `tuna-os/kde-build-meta`
-junctioned repo (now archived) to remove a class of junction-nesting bugs and
-separate-repo staleness tracking:
+Aurora Tromso uses one repository. All KDE, Plasma, and freedesktop-sdk `.bst`
+elements are in `elements/`. They came from the former `tuna-os/kde-build-meta`
+junction repository, which is now archived. This structure prevents nested
+junction bugs and stale references between repositories:
 
 ```
 tuna-os/tromso
@@ -35,7 +35,7 @@ tuna-os/tromso
 
 - Podman
 - [`just`](https://github.com/casey/just) (task runner)
-- ~100 GB free disk space for build cache
+- ~100 GB of free disk space for the build cache
 
 ### Build
 
@@ -79,7 +79,7 @@ ssh -p 2222 root@localhost
 ## CI/CD — multi-runner BuildStream
 
 The sole image-build workflow (`.github/workflows/build-tromso-multirunner.yml`)
-splits the BuildStream graph across runners, merges the resulting CAS, builds
+splits the BuildStream graph across runners, merges the output CAS, builds
 the final target, and pushes the result to GHCR:
 
 ```
@@ -88,12 +88,12 @@ ghcr.io/tuna-os/tromso:<date>
 ghcr.io/tuna-os/tromso:<git-sha>
 ```
 
-**How it works:** planning, core, and dependency chunks run through the shared
-`tuna-os/bst-ci` reusable workflow; `build_final` merges the chunk CAS archives,
-exports the OCI image, signs it, and publishes the nightly or stable tags.
-The workflow runs on its scheduled/manual triggers; it is intentionally the
-single BuildStream publication path so every successful image uses the same
-convergent cache and signing identity.
+**How it works:** the plan, core, and dependency chunks run through the shared
+`tuna-os/bst-ci` reusable workflow. The `build_final` job merges the chunk CAS
+archives, exports the OCI image, adds a signature, and publishes the nightly or
+stable tags. Scheduled and manual triggers start this workflow. It is the only
+BuildStream publication path, so each successful image uses the same convergent
+cache and signer identity.
 
 ## Updating KDE Packages
 
@@ -105,8 +105,9 @@ See `AGENTS.md` for full conventions and workflows.
 
 ## Verifying Signatures
 
-OCI images and live ISOs are signed keylessly with [cosign](https://github.com/sigstore/cosign)
-via GitHub Actions OIDC (Sigstore/Fulcio) — no long-lived signing key to leak or rotate.
+GitHub Actions OIDC uses [cosign](https://github.com/sigstore/cosign) to sign OCI
+images and live ISOs without a key. Thus, no long-lived signer key can leak or
+need rotation.
 
 **OCI images:**
 
@@ -116,8 +117,8 @@ cosign verify ghcr.io/tuna-os/tromso:latest \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-**Live ISOs** (`.sig`/`.cert` are published alongside each dated ISO, e.g.
-`tromso-live-<date>-<sha>.iso.sig`):
+**Live ISOs** (the workflow publishes `.sig` and `.cert` beside each dated ISO,
+for example `tromso-live-<date>-<sha>.iso.sig`):
 
 ```bash
 cosign verify-blob tromso-live-<date>-<sha>.iso \
@@ -129,7 +130,7 @@ cosign verify-blob tromso-live-<date>-<sha>.iso \
 
 ## References
 
-- **[KDE Linux](https://invent.kde.org/kde-linux/kde-linux)** — the real official KDE Linux project (mkosi + Arch, not BuildStream); tromso tracks its package selection as a reference point, not its build tooling
+- **[KDE Linux](https://invent.kde.org/kde-linux/kde-linux)** — the official project for KDE Linux uses mkosi and Arch, not BuildStream. Tromso uses its package selection as a reference, but does not use its build tools.
 - **[Project Bluefin dakota](https://github.com/projectbluefin/dakota)** — reference OCI/bootc implementation
 - **[gnome-build-meta](https://gitlab.gnome.org/GNOME/gnome-build-meta)** — build patterns reference
 - **[freedesktop-sdk](https://freedesktop-sdk.io/)** — base SDK
@@ -137,8 +138,8 @@ cosign verify-blob tromso-live-<date>-<sha>.iso \
 
 ## ISO Builder (merged from tromso-iso)
 
-The live-ISO tooling is maintained in this repository. Build a systemd-boot
-UEFI ISO from the published Tromso payload, then boot it in QEMU:
+This repository contains and maintains the tools for the live ISO. Build a
+systemd-boot UEFI ISO from the published Tromso payload, then boot it in QEMU:
 
 ```bash
 just iso-sd-boot tromso
@@ -154,4 +155,4 @@ release, follow
 
 ---
 
-Part of the [TunaOS](https://tunaos.org) ecosystem. [Docs](https://tunaos.org) · [Contributing](CONTRIBUTING.md)
+Part of the [TunaOS](https://tunaos.org) ecosystem. [Docs](https://tunaos.org) · [Contribution guide](CONTRIBUTING.md)
