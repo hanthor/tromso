@@ -29,8 +29,6 @@ depends:
 - freedesktop-sdk.bst:components/ostree.bst
 - freedesktop-sdk.bst:components/composefs.bst
 
-- freedesktop-sdk.bst:vm/config/sudo-nopasswd.bst
-
 - oci/integration/lvm2-enable-activation.bst
 
 public:
