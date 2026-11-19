@@ -107,8 +107,12 @@ freedesktop-sdk (base SDK, via elements/freedesktop-sdk.bst junction)
 ```
 
 The build is fully reproducible: all sources are pinned by git ref or tarball SHA256.
-BuildGrid is used for distributed compilation — build jobs run on the home cluster
-over Tailscale and results are cached as content-addressable artifacts.
+CI has no remote executor. Builds run on GitHub-hosted runners, split into
+plan, core, chunk and final jobs that hand their CAS to each other as tarballs
+on GHCR. BuildStream pulls artifacts and sources from
+`cache.freedesktop-sdk.io` (`project.conf`). Remote execution through
+`cache.projectbluefin.io` stays off until a CASD client certificate exists.
+See [docs/ci-and-iso-pipeline.md](docs/ci-and-iso-pipeline.md).
 
 ---
 
@@ -122,7 +126,7 @@ over Tailscale and results are cached as content-addressable artifacts.
 | Bootloader | systemd-boot | Via bootc install |
 | Image format | OCI/bootc | Enables atomic upgrades via `bootc upgrade` |
 | Build system | BuildStream 2 | Same as GNOME OS and dakota; hermetic builds |
-| Artifact cache | BuildGrid (gRPC) | Home cluster via Tailscale; survives runner restarts |
+| Artifact cache | freedesktop-sdk CAS + per-chunk CAS tarballs on GHCR | Free runners cannot hold the whole KDE build; chunks restore their own previous CAS |
 
 ---
 
