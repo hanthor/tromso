@@ -79,7 +79,7 @@ cosign step landed):
 
 ```
 cosign verify ghcr.io/tuna-os/tromso:stable \
-  --certificate-identity-regexp '^https://github.com/tuna-os/tromso/' \
+  --certificate-identity-regexp '^https://github\.com/tuna-os/tromso/\.github/workflows/build-tromso-multirunner\.yml@refs/heads/main$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
@@ -141,7 +141,7 @@ git ls-remote --heads https://github.com/tuna-os/tromso stable
 curl -sI https://download.tunaos.org/tromso/stable/tromso-live-latest.iso
 cosign verify-blob --signature tromso-live-latest.iso.sig \
   --certificate tromso-live-latest.iso.cert \
-  --certificate-identity-regexp '^https://github.com/tuna-os/tromso/' \
+  --certificate-identity-regexp '^https://github\.com/tuna-os/tromso/\.github/workflows/build-iso\.yml@refs/heads/main$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   tromso-live-latest.iso
 ```
