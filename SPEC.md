@@ -183,7 +183,7 @@ GitHub Actions runners
   → sign and push ghcr.io/tuna-os/tromso tags
 ```
 
-Triggers: push to `main` (elements/**, project.conf, include/**), daily at 06:00 UTC, manual dispatch.
+Triggers: a daily schedule at 00:30 UTC and manual dispatch. No push trigger exists; #93 removed it.
 
 The multi-runner workflow splits the build into parallel chunks across GitHub
 runners using the shared [tuna-os/bst-ci](https://github.com/tuna-os/bst-ci)

@@ -2,7 +2,8 @@
 
 ## Supported Versions
 
-Tromso images are built on every push to `main` and published to GHCR.
+Tromso images are built from `main` each day at 00:30 UTC, or on manual dispatch,
+and published to GHCR.
 Only the most recent build of each tag has active support. A periodic job
 removes older tags.
 
