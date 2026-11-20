@@ -135,11 +135,15 @@ GitHub Actions OIDC uses [cosign](https://github.com/sigstore/cosign) to sign OC
 images and live ISOs without a key. Thus, no long-lived signer key can leak or
 need rotation.
 
+Each identity pattern ends with `@refs/heads/main$`. The certificate records
+the branch that ran the workflow, and `main` is the only protected branch. A
+signature from a different branch does not pass.
+
 **OCI images:**
 
 ```bash
 cosign verify ghcr.io/tuna-os/tromso:latest \
-  --certificate-identity-regexp 'https://github.com/tuna-os/tromso/\.github/workflows/build-tromso-multirunner\.yml@.*' \
+  --certificate-identity-regexp '^https://github\.com/tuna-os/tromso/\.github/workflows/build-tromso-multirunner\.yml@refs/heads/main$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
@@ -150,7 +154,7 @@ for example `tromso-live-<date>-<sha>.iso.sig`):
 cosign verify-blob tromso-live-<date>-<sha>.iso \
   --certificate tromso-live-<date>-<sha>.iso.cert \
   --signature tromso-live-<date>-<sha>.iso.sig \
-  --certificate-identity-regexp 'https://github.com/tuna-os/tromso/\.github/workflows/build-iso\.yml@.*' \
+  --certificate-identity-regexp '^https://github\.com/tuna-os/tromso/\.github/workflows/build-iso\.yml@refs/heads/main$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 

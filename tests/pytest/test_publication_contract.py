@@ -220,5 +220,61 @@ def test_signing_stays_in_existing_identity_workflow():
 def test_readme_verifier_identity_is_not_widened():
     readme = (REPO / "README.md").read_text()
     identities = re.findall(r"--certificate-identity-regexp '([^']+)'", readme)
-    assert "https://github.com/tuna-os/tromso/\\.github/workflows/build-tromso-multirunner\\.yml@.*" in identities
+    assert (
+        "^https://github\\.com/tuna-os/tromso/\\.github/workflows/"
+        "build-tromso-multirunner\\.yml@refs/heads/main$"
+    ) in identities
     assert not any("build-final" in identity for identity in identities)
+
+
+SIGNING_WORKFLOWS = ("build-tromso-multirunner.yml", "build-iso.yml")
+OTHER_REFS = (
+    "refs/heads/feature",
+    "refs/heads/main-2",
+    "refs/heads/main/x",
+    "refs/heads/stable",
+    "refs/tags/main",
+    "refs/pull/1/merge",
+)
+
+
+def _signer(workflow, ref, repo="tuna-os/tromso"):
+    return f"https://github.com/{repo}/.github/workflows/{workflow}@{ref}"
+
+
+def test_documented_verifier_identities_accept_only_main():
+    """A documented verify command must reject a signature from another branch.
+
+    The keyless certificate identity ends with the ref that ran the workflow,
+    and cosign looks for the pattern anywhere in that identity. main is the
+    only protected branch, so a pattern that stops at ``@`` also accepts a
+    signature that the same workflow file made on an unreviewed branch.
+    """
+    documents = [
+        REPO / "README.md",
+        *sorted((REPO / "runbooks").glob("*.md")),
+        *sorted((REPO / "docs").rglob("*.md")),
+    ]
+    patterns = [
+        (path.relative_to(REPO).as_posix(), pattern)
+        for path in documents
+        for pattern in re.findall(r"--certificate-identity-regexp '([^']+)'", path.read_text())
+    ]
+    assert {where for where, _ in patterns} >= {"README.md"}
+    for where, pattern in patterns:
+        accepted = [
+            workflow for workflow in SIGNING_WORKFLOWS
+            if re.search(pattern, _signer(workflow, "refs/heads/main"))
+        ]
+        assert len(accepted) == 1, (
+            f"{where}: {pattern!r} must accept one signing workflow on main, "
+            f"accepts {accepted}"
+        )
+        workflow = accepted[0]
+        rejected = [
+            *(_signer(workflow, ref) for ref in OTHER_REFS),
+            _signer(workflow, "refs/heads/main", repo="tuna-os/tromso-2"),
+            "https://example.org/" + _signer(workflow, "refs/heads/main"),
+        ]
+        wrongly_accepted = [signer for signer in rejected if re.search(pattern, signer)]
+        assert not wrongly_accepted, f"{where}: {pattern!r} accepts {wrongly_accepted}"
