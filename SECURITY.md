@@ -4,14 +4,13 @@
 
 Tromso images are built from `main` each day at 00:30 UTC, or on manual dispatch,
 and published to GHCR.
-Only the most recent build of each tag has active support. A periodic job
-removes older tags.
+Only the most recent build of each tag has active support.
 
 | Tag | Status |
 |---|---|
 | `latest` | ✅ Supported |
 | `<git-sha>` | ⚠️ Best effort |
-| `<date>` | ⚠️ Best effort |
+| `nightly-<YYYYMMDD>` | ⚠️ Best effort |
 
 ## Reporting a Vulnerability
 

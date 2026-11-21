@@ -109,7 +109,8 @@ the final target, and pushes the result to GHCR:
 
 ```
 ghcr.io/tuna-os/tromso:latest
-ghcr.io/tuna-os/tromso:<date>
+ghcr.io/tuna-os/tromso:nightly
+ghcr.io/tuna-os/tromso:nightly-<YYYYMMDD>
 ghcr.io/tuna-os/tromso:<git-sha>
 ```
 
