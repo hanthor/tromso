@@ -88,7 +88,7 @@ just log
 - **NEVER** run `bst` directly on the host or via `pipx` for project work.
 - Never use `just bst-build` directly in a blocking tool call — it uses `tail -f`.
 - The build container image is pinned in `Justfile` for reproducibility.
-- Build log location: `/var/tmp/tromso-build.log`
+- Build log location: `/tmp/tromso-build.log`
 
 ---
 
@@ -96,13 +96,13 @@ just log
 
 1. Check the build log for the element name:
    ```bash
-   grep "FAILURE" /var/tmp/tromso-build.log | grep -v "^    "
+   grep "FAILURE" /tmp/tromso-build.log | grep -v "^    "
    ```
 
 2. Read the detailed log:
    ```bash
-   ls -t ~/.cache/buildstream/logs/gnome/kde-frameworks-ELEMENT/ | head -1 | \
-     xargs -I{} cat ~/.cache/buildstream/logs/gnome/kde-frameworks-ELEMENT/{}
+   ls -t ~/.cache/buildstream/logs/tromso/kde-frameworks-ELEMENT/ | head -1 | \
+     xargs -I{} cat ~/.cache/buildstream/logs/tromso/kde-frameworks-ELEMENT/{}
    ```
 
 3. Fix the failed `.bst` file in this repository's `elements/` tree.
@@ -110,8 +110,8 @@ just log
 4. **Clear the cached failure** (BST caches failed artifacts):
    ```bash
    # Clear ONLY the failed element to preserve cache for unrelated elements
-   rm -rf ~/.cache/buildstream/artifacts/refs/gnome/kde-CATEGORY-ELEMENT/
-   rm -rf ~/.cache/buildstream/logs/gnome/kde-CATEGORY-ELEMENT/
+   rm -rf ~/.cache/buildstream/artifacts/refs/tromso/kde-CATEGORY-ELEMENT/
+   rm -rf ~/.cache/buildstream/logs/tromso/kde-CATEGORY-ELEMENT/
    ```
    **⚠️ CRITICAL**: Never clear `kde-*` broadly — this forces rebuild of ALL KDE elements, not just the fix.
    Instead, clear only the specific element that failed.
@@ -162,7 +162,7 @@ Pattern — if upstream `CMakeLists.txt` has `find_package(KF6Foo REQUIRED)`, th
   maintainer's machine — clone from GitHub/GitLab if working elsewhere)
   - `dakota/` — Project Bluefin Dakota (GNOME-based, bootc-enabled) — https://github.com/projectbluefin/dakota
   - `gnome-build-meta/` — GNOME's BuildStream repository — https://gitlab.gnome.org/GNOME/gnome-build-meta
-- **Build logs**: `/var/tmp/tromso-build.log`
+- **Build logs**: `/tmp/tromso-build.log`
 - **Cache**: `~/.cache/buildstream/`
 - **This project**: `/var/home/james/dev/tromso/` (local checkout path — irrelevant to any other clone)
 
