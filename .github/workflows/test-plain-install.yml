@@ -37,7 +37,7 @@ permissions:
 
 concurrency:
   group: plain-e2e-${{ github.ref }}-${{ inputs.candidate_sha }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   TARGET: tromso
