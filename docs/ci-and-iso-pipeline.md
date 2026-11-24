@@ -176,6 +176,7 @@ or PR comments.
 
 | Date | Symptom | Root cause | Fix |
 |---|---|---|---|
+| 2026-11-24 | A manual run of `build-iso.yml` on a different branch signs the ISO and replaces `tromso-live-latest.iso` | The `publish` job had no condition on the ref, and `skip_upload` is `false` by default | The `publish` job runs only for `refs/heads/main`. Its self-check uses the README pattern; `test_iso_is_signed_and_published_only_from_main` |
 | 2026-11-13 | `Sign ISO` stops with exit code 137 after `Using payload from` (run 43385946786) | cosign 3 reads the whole ISO into memory. The 9 GB Tromsø ISO peaks above the 16 GB of runner RAM, so the kernel stops the job | Add a 16 GB swap file before signing; `test_iso_signing_has_swap_for_whole_iso_reads` |
 | 2026-11-13 | ISO signing fails on every run: `must specify --bundle with --new-bundle-format` (run 43353984640) | cosign-installer v4.1.3 installs cosign 3, which writes bundles by default and rejects the detached `--output-signature`/`--output-certificate` flags | Select cosign's legacy detached mode (`--use-signing-config=false --new-bundle-format=false`), require nonempty `.sig`/`.cert`, and run the README `cosign verify-blob` command before any upload; `test_iso_signing_preserves_detached_outputs_with_cosign3` |
 | 2026-11-03 | Python Tests fails with `No module named 'yaml'` (#449) | The workflow guard test imports PyYAML, but CI installs only pytest | Install PyYAML in the Python Tests job; `test_python_ci_installs_workflow_parser` checks this dependency |
