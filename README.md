@@ -92,7 +92,7 @@ ssh -p 2222 root@localhost
 
 | Recipe | Description |
 |---|---|
-| `just bst-build` | Background build, logs to `/var/tmp/tromso-build.log` |
+| `just bst-build` | Background build, logs to `/tmp/tromso-build.log` |
 | `just build` | Foreground build + OCI export |
 | `just log` | Tail the build log |
 | `just generate-bootable-image` | Create a bootable raw disk image via bootc |

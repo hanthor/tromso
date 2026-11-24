@@ -202,7 +202,9 @@ or PR comments.
 | 2026-07-20 | Runner agent process crashes mid-build (`System.IO.IOException: No space left on device`) on heavy chunks (`util-linux-full`, `cryptsetup`, `pwquality`), bypassing `if: always()` CAS salvage | `ublue-os/remove-unwanted-software@v9` freed insufficient disk space compared to `jlumbroso/free-disk-space` (which removes tool-cache), leaving ~25GB instead of ~45GB free | Upstreamed `jlumbroso/free-disk-space@v5` (`tool-cache: true`) to `build_core` in `tuna-os/bst-ci` (matching `build_deps` and `build_final`), increasing free disk space for heavy dependency closures (tromso#96) |
 
 Add rows to this table as you change CI. See the organization `ci-fix-loop`
-skill. The `docs/ci-troubleshooting.md` file in tuna-os/tunaos shows the format.
+skill. The
+[failure catalog](https://github.com/tuna-os/tunaos/blob/main/docs/ci-troubleshooting/failure-catalog.md)
+in tuna-os/tunaos shows the format.
 
 ## Channels: nightly (main) and stable
 
