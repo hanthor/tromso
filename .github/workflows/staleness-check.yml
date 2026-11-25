@@ -97,3 +97,9 @@ jobs:
           gh issue comment "$EXISTING_ISSUE" --repo "${{ github.repository }}" \
             --body "Resolved — latest successful build: ${AGE_DESC}."
           gh issue close "$EXISTING_ISSUE" --repo "${{ github.repository }}"
+
+      - name: Block release readiness while publication is stale
+        if: steps.stale.outputs.stale == 'true'
+        run: |
+          echo "::error::No fresh main image publish within ${STALE_HOURS}h; Tromsø is not Beta-eligible. See the stale-build alert and #278."
+          exit 1

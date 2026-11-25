@@ -388,3 +388,13 @@ def test_webkit_framework_condition_handles_unset_link_target():
         "+        if ((NOT _linked_into) OR (framework STREQUAL _linked_into) "
         "OR (NOT _linked_into IN_LIST ${_target}_FRAMEWORKS))"
     ) in correction
+
+
+def test_stale_publication_fails_after_alert_is_maintained():
+    """A stale build must report red while still maintaining its alert."""
+    workflow = (REPO / ".github/workflows/staleness-check.yml").read_text()
+    marker = "- name: Block release readiness while publication is stale"
+    gate = workflow.split(marker, 1)[1]
+    assert "if: steps.stale.outputs.stale == 'true'" in gate
+    assert "exit 1" in gate
+    assert workflow.index("- name: Open or update stale-build alert") < workflow.index(marker)
