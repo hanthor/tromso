@@ -103,13 +103,6 @@ jobs:
       - name: Reject development Secure Boot keys
         run: python3 files/boot-keys/check-release-keys.py --release
 
-      - name: Checkout chunkah
-        uses: actions/checkout@v7.0.1
-        with:
-          repository: coreos/chunkah
-          path: chunkah
-          persist-credentials: false
-
       - run: podman pull "$BST2_IMAGE"
 
       - name: Setup Just
