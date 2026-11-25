@@ -82,7 +82,10 @@ updates each few days. The last one is `kde-buildstream!76` (2026-11-24).
 | Installer | Calamares, in a live sysext on the ISO | `kde-linux:mkosi.extra/live/usr/calamares/` |
 | CI | GitLab CI on KDE runners (`LargeVM`). One job runs `build.sh`. OpenQA tests the image, but the job can fail without an effect. | `kde-linux:.gitlab-ci.yml` (`allow_failure: true`) |
 | Artifact cache | `https://buildstream.cache.kde-linux.haraldsitter.eu:11001`, plus proxy caches for freedesktop-sdk. The host is not on a KDE domain. | `kde-buildstream:project.conf` |
-| Versions and releases | No tags. No releases. `master` moves each few days. | `git tag` is empty |
+| Versions and releases | No tags. No releases. `master` moves each few days. | `git ls-remote --tags` gives 0 lines |
+| Source updates | The project `sysadmin/buildstream-management` runs `bst source track` and opens a merge request | kde-linux#727 |
+| Flatpak runtime | No Flatpak elements now. kde-linux#727 says that `kde-buildstream` will become the base of the KDE Flatpak runtime. A different merge request, `packaging/flatpak-kde-runtime!14`, moves that runtime to BuildStream. | `grep` for `flatpak_image` gives 0 elements |
+| Plan for `kde-linux-packages` | kde-linux#727 says that this repository will go away when generated elements replace kde-builder | kde-linux#727 |
 | Licence | Elements: BSD-2-Clause. Patches for freedesktop-sdk: MIT. The repository uses REUSE. | `kde-buildstream:REUSE.toml` |
 | BuildStream version | `min-version: 2.5` in `project.conf`. CI installs BuildStream 2.7 or later. | `kde-buildstream:build.sh` |
 
@@ -98,12 +101,23 @@ Conclusion: the upstream is real, official and active. It is not a
 replacement for the Tromsø graph today. But two of its layers (`qt/` and
 `components/`) are complete, and Tromsø can use them after a base update.
 
-### 1.6 What the search did not find
+### 1.6 What the survey searched, and what it did not find
 
-- The survey did not read blog posts or email lists. It used only GitLab
-  data. The owner can add links.
+- The survey read the three repositories and the GitLab project data.
+- It read the merge requests that match "buildstream".
+- It read the text of kde-linux#727 and kde-linux#768.
+- The survey did not read the 50 comments of kde-linux#727. The GitLab
+  interface for comments needs an account.
+- The survey did one search of the web, with two results. It read only their
+  summaries in the search result.
+  - A Phoronix article of 2026-10-02
+    (<https://www.phoronix.com/news/BuildStream-Based-KDE-Linux>). The summary
+    says that KDE has not yet decided to ship the BuildStream image.
+  - Aleix Pol, "KDE Linux, BuildStream and Hope", FrOSCon 2026
+    (<https://programm.froscon.org/froscon2026/talk/dbe55194-603c-4722-8573-75949ce6c8f6/>).
+- The survey found no date for the change of the main line. kde-linux#727
+  asks the question "when do we land it?" and gives no answer in its text.
 - The survey did not examine the content of the artifact cache.
-- No statement says when the `buildstream` branch becomes the main line.
 
 ## 2. Tromsø compared with the KDE Linux BuildStream work
 
@@ -156,7 +170,7 @@ the two projects have a file with the same base name.
 | Offline graph tests | `tests/pytest/test_source_aliases.py`, `tests/pytest/test_source_tracking_scope.py` | `kde-buildstream:tools/check-missing-deps.py` only |
 | Plasma patches | 40 patch files for 17 KDE modules, for example `patches/plasma-workspace`, `patches/kscreenlocker` | No patches for KDE modules |
 | Applications in the image | Elisa, Gwenview, Kate, KCalc, Okular, PySide6 | Flatpak for applications |
-| NVIDIA, snapd and codec sysexts | `elements/kde-linux-system/nvidia-runtime`, `elements/kde-linux-system/snapd` | `kde-buildstream!62` is open for NVIDIA containers |
+| NVIDIA, snapd and codec sysexts | Elements exist in `elements/kde-linux-system/nvidia-runtime` and `elements/kde-linux-system/snapd`. The image graph does not use them (section 2.7). | `kde-buildstream!62` is open for NVIDIA containers |
 
 ### 2.4 Where Tromsø is BEHIND
 
@@ -165,8 +179,8 @@ the two projects have a file with the same base name.
 | freedesktop-sdk | 25.08.17 | 26.08.4-216 |
 | Qt | 6.10.3 (`elements/kde/qt6/qt6-qtbase.bst`) | 6.12.0 |
 | Qt WebEngine, Qt WebView, Qt Graphs, Qt gRPC | Not present | Present in `kde-buildstream:elements/qt/` |
-| Source updates for KDE and Qt | Not tracked. `.github/workflows/track-bst-sources.yml` tracks only `elements/tromso`. The files in `elements/kde` last changed on 2026-07-20. | A bot updates all elements each few days |
-| KDE module versions | Git `master` from 2026-07-20 or earlier, for example kwin `v6.5.90-429` | Git `master` each night |
+| Source updates for KDE and Qt | Not tracked. `.github/workflows/track-bst-sources.yml` tracks only `elements/tromso`. The files in `elements/kde` last changed on 2026-07-20, and the refs are older. | A bot updates all elements each few days |
+| KDE module versions | Git `master` from March 2026. The kwin ref `v6.5.90-429-g36a51bd` has the commit date 2026-03-26. | Git `master` each night |
 | Session and login | SDDM (`elements/kde/plasma/sddm.bst`) | plasma-login-manager, plasma-setup, plasma-keyboard |
 | KDE modules that Tromsø lacks | 52 names, for example discover, plasma-welcome, plasma-firewall, plasma-disks, kio-extras, kio-fuse, kwallet-pam, partitionmanager, print-manager, krdp, flatpak-kcm | In `kde-buildstream!68` |
 | Components that Tromsø lacks | 108 names, for example dbus-broker, snapper, docker, tuned, ddcutil, libqalculate, sshfs, htop, ripgrep | In `kde-buildstream:elements/components/` |
@@ -207,6 +221,34 @@ survey compared the Git blob of each local file with gnome-build-meta.
   drifted for 8 months.
 
 This drift is the cause of the work in #427 and #402. A junction removes it.
+
+### 2.7 Local elements and the image graph
+
+`bst show --deps all oci/tromso.bst` on `main` lists 1216 elements. 717 are
+in the freedesktop-sdk junction. 499 are local. The repository has 801 local
+elements. Thus, 302 local elements are not in the image.
+
+| Directory | In the image graph | In the repository |
+|---|---|---|
+| `elements/kde` (Qt, Frameworks, Plasma, applications, libraries) | 170 | 176 |
+| `elements/kde-linux-deps` | 159 | 197 |
+| `elements/sdk`, `elements/sdk-deps` | 70 | 74 |
+| `elements/core-deps` | 47 | 169 |
+| `elements/oci` | 22 | 24 |
+| `elements/tromso` | 17 | 22 |
+| `elements/kde-linux-system` | 10 | 70 |
+| `elements/core` | 1 | 61 |
+
+Findings:
+
+- `elements/core` has 60 GNOME elements that the image does not use. Only
+  `elements/core/sysprof-app.bst` is in the graph.
+- 60 of 70 elements in `elements/kde-linux-system` are not in the graph. This
+  includes the sysext images and `elements/kde-linux-system/signed-boot.bst`.
+- `elements/sdk/webkitgtk-6.0.bst` is in the graph of a Plasma image. The
+  survey did not find which element needs it.
+- `elements/tromso/uupd.bst` is not in the graph. The survey did not find how
+  the image gets uupd.
 
 ## 3. Tromsø compared with Dakota
 
@@ -311,7 +353,7 @@ Rules:
 | Patch carrying | Patches for an element in a junction need a patch queue on the junction, or a local override. This is more work for each patch. | A patch is one line in a local element |
 | Cadence | `kde-buildstream` has no releases. Tromsø pins a commit and moves the pin on a schedule. A bad upstream commit stays out until the pin moves. | Tromsø controls each ref |
 | Review load | One junction update changes many elements at one time. It needs a full build and a boot proof. | Many small updates |
-| Local elements | About 150 after the migration | 801 |
+| Local elements | About 150 after the migration (an estimate) | 801, of which 499 are in the image |
 | What users see | Newer Qt and Plasma. The KDE Linux default applications and settings can show through. Tromsø keeps SDDM or moves to plasma-login-manager by decision. | No change |
 | Risk of upstream change | The upstream can rename or remove elements. The pin protects the build. | None |
 
@@ -335,18 +377,18 @@ CI build and a boot proof (the live ISO gate and the install tests).
 |---|---|---|---|
 | 0 ([#522](https://github.com/tuna-os/tromso/pull/522)) | This document and the tracking issue | No | Linters |
 | 1 ([#524](https://github.com/tuna-os/tromso/pull/524)) | Add `kde-buildstream` as a pinned junction that no element uses | No | The cache keys of `oci/tromso.bst` do not change |
-| 2 ([#525](https://github.com/tuna-os/tromso/issues/525)) | Start source tracking again for `elements/kde` (Git `master` refs), in groups | Yes | Full build, boot proof |
-| 3 ([#526](https://github.com/tuna-os/tromso/issues/526)) | Update `buildstream-plugins` to 2.8.0 and `buildstream-plugins-community` to 2.4.0 | Yes (all cache keys) | Full build, boot proof |
+| 2 ([#525](https://github.com/tuna-os/tromso/issues/525)) | Start source tracking again for `elements/kde/frameworks`. Plasma `master` needs Qt 6.11 (see the order rules), so Plasma and applications wait for step 11. | Yes | Full build, boot proof |
+| 3 ([#526](https://github.com/tuna-os/tromso/issues/526)) | Update `buildstream-plugins` to 2.8.0 and `buildstream-plugins-community` to the version that `kde-buildstream` needs | Probably all cache keys. Measure with the key list. | Full build, boot proof |
 | 4 ([#527](https://github.com/tuna-os/tromso/issues/527)) | Move freedesktop-sdk to 26.08. Rebase the patch queue. | Yes (full rebuild) | Full build, boot proof, install tests |
 | 5 ([#528](https://github.com/tuna-os/tromso/issues/528)) | Add a gnome-build-meta junction (`gnome-51`). Replace `elements/sdk` and `elements/sdk-deps` with overrides into the junction. | Yes | Full build, boot proof |
 | 6 ([#529](https://github.com/tuna-os/tromso/issues/529)) | Replace `elements/core-deps` and the boot elements in `elements/kde-linux-system` with the junction. Take bootc from the Dakota override. | Yes | Boot proof, install tests, Secure Boot test |
-| 7 ([#530](https://github.com/tuna-os/tromso/issues/530)) | Remove `elements/core` (GNOME applications that the image does not use) | No, if the graph is equal | Cache key comparison |
+| 7 ([#530](https://github.com/tuna-os/tromso/issues/530)) | Remove the 60 elements of `elements/core` and the other 242 local elements that the image graph does not use | No, if the graph is equal | Cache key comparison |
 | 8 ([#531](https://github.com/tuna-os/tromso/issues/531)) | Add a freedesktop-sdk-extra junction. Remove the 60 local copies. | Yes | Full build, boot proof |
 | 9 ([#532](https://github.com/tuna-os/tromso/issues/532)) | Take `kexec-disable`, `lockdown-kargs` and the boot layer checks from Dakota | Yes | Boot proof, Secure Boot test |
 | 10 ([#533](https://github.com/tuna-os/tromso/issues/533)) | Switch leaf components to `kde-buildstream.bst:components/`, in groups of about 20 | Yes | Full build, boot proof |
 | 11 ([#534](https://github.com/tuna-os/tromso/issues/534)) | Switch Qt to `kde-buildstream.bst:qt/` (6.12) | Yes (all KDE elements) | Full build, boot proof, session test |
 | 12 ([#535](https://github.com/tuna-os/tromso/issues/535)) | After `kde-buildstream!68` merges: switch Frameworks, then Plasma, then applications to `kde-buildstream.bst:kde/` | Yes | Full build, boot proof, session test |
-| 13 ([#536](https://github.com/tuna-os/tromso/issues/536)) | Rename or remove `kde-linux-deps` and `kde-linux-system` | No, if only names change. But names are part of cache keys. | Full build |
+| 13 ([#536](https://github.com/tuna-os/tromso/issues/536)) | Rename or remove `kde-linux-deps` and `kde-linux-system` | Probably yes. Measure with the key list. | Full build |
 | 14 ([#537](https://github.com/tuna-os/tromso/issues/537)) | Add junction tracking with review, and a `next` branch | No | CI |
 
 Status of step 1 ([tuna-os/tromso#524](https://github.com/tuna-os/tromso/pull/524)):
@@ -367,7 +409,11 @@ does not have this problem. Remove the directory before a local build.
 
 Order rules:
 
-- Steps 3 and 4 each cause a full rebuild. Do not combine them with other
+- `plasma/kwin` and `plasma/plasma-workspace` on `master` set
+  `QT_MIN_VERSION` to 6.11.0. Tromsø has Qt 6.10.3. `frameworks/kio` needs
+  only 6.10.0. Thus, step 2 can update Frameworks, but not Plasma.
+
+- Steps 3 and 4 probably each cause a full rebuild. Do not combine them with other
   changes.
 - Step 4 comes before steps 5, 8, 10 and 11. All three upstreams are on
   26.08. Their elements depend on elements that freedesktop-sdk 25.08 does
@@ -412,5 +458,9 @@ owner sends each item. Drafts are in `docs/outreach`.
 - The version comparison reads the first source of each element.
 - The count of gnome-build-meta copies (about 290) uses the `gnome-51`
   branch for names and the `gnome-50` history for content.
-- The commit dates of the KDE module refs in Tromsø were not read. The text
-  uses the date of the last change of the files.
+- The survey read the commit date of the kwin ref only. It did not read
+  the dates of the other KDE refs.
+- The CI workflows that build the image do not run `pytest`. The survey
+  confirmed this with a search of the workflow files only.
+- The survey did not test that an update of the plugins changes all cache
+  keys.
