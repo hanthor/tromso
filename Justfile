@@ -37,6 +37,7 @@ export OCI_IMAGE_VERSION := env("OCI_IMAGE_VERSION", "latest")
 
 import "just/buildstream.just"
 import "just/disk-vm.just"
+import "just/local-cache.just"
 
 # ── Build ─────────────────────────────────────────────────────────────
 [group('build')]
