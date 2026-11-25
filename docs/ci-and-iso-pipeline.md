@@ -238,7 +238,7 @@ or PR comments.
 
 - **`track-junctions.yml`** — weekly `bst source track` for the
   `freedesktop-sdk`, `gnome-build-meta` and `kde-buildstream` junctions. One
-  PR for each junction, never automerged. A missing junction is skipped. The
+  PR for each junction, never automerged. The workflow skips a missing junction. The
   PR build replaces a `next` branch. Same `BOT_TOKEN` note as above.
 
 ## Troubleshooting log (symptom → root cause → fix)

@@ -121,15 +121,15 @@ pull request as merged. Pull request #515 is an example.
 `track-junctions.yml` runs each Monday. It runs `bst source track` for
 `freedesktop-sdk.bst`, `gnome-build-meta.bst` and `kde-buildstream.bst`, and
 opens one pull request for each junction that has a new pin. The branch is
-`auto/track-junction-<name>`. A junction that has no element file yet is
-skipped.
+`auto/track-junction-<name>`. The workflow skips a junction that has no
+element file yet.
 
-- No pull request is merged automatically. A maintainer must review it.
-- The pull request build is the test. Tromsø has no `next` branch: the build
-  on the pull request already builds the new pin against the current `main`,
-  and a `next` branch would add a second place to keep in sync. Revisit this
-  if a pin needs more than one pull request to land.
-- Merge only when the full build is green. If the junction supplies the
+- The workflow never merges a pull request. A maintainer must review it.
+- The pull request build is the test. Tromsø has no `next` branch. The build
+  on the pull request builds the new pin against the current `main`. A `next`
+  branch would add a second place to keep in sync. Revisit this if a pin
+  needs more than one pull request to land.
+- Merge only after the full build passes. If the junction supplies the
   kernel, systemd, bootc or Secure Boot elements, also do the boot proof.
 
 ## Pull requests from the source tracker
