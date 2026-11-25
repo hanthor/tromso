@@ -182,12 +182,19 @@ Issue #521 tracks the work, and each step has its own issue (#525 to #537).
 
 ## Local build
 
-A cold build of `oci/tromso.bst` takes many hours. `README.md` has the
-commands. To see the state of the graph without a build, run:
+A build of `oci/tromso.bst` from an empty cache takes many hours. Copy the
+CI cache first:
 
 ```bash
-just bst show --deps all oci/tromso.bst
+just bootstrap-cache
+just cache-status
+just build-local elements-you-changed.bst
 ```
+
+`just bootstrap-cache` downloads the core cache from GHCR without a login and
+checks its digest. After that, BuildStream rebuilds only what you changed.
+Use this to test an element change before you ask for a nightly build. The
+pipeline guide has the details in "Local builds from the CI cache".
 
 ## Your first week
 

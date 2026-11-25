@@ -6,14 +6,17 @@
 bst *ARGS:
     #!/usr/bin/env bash
     set -euo pipefail
-    mkdir -p "${HOME}/.cache/buildstream" "${HOME}/.cargo" "${HOME}/.config/buildstream"
+    # BST_CACHE_DIR selects a different cache directory, for example a
+    # throwaway one for `just bootstrap-cache` experiments.
+    CACHE_DIR="${BST_CACHE_DIR:-${HOME}/.cache/buildstream}"
+    mkdir -p "$CACHE_DIR" "${HOME}/.cargo" "${HOME}/.config/buildstream"
 
     podman --cgroup-manager=cgroupfs run --rm --security-opt label=type:unconfined_t \
         --privileged \
         --device /dev/fuse \
         --network=host \
         -v "{{justfile_directory()}}:/src:rw" \
-        -v "${HOME}/.cache/buildstream:/root/.cache/buildstream:rw" \
+        -v "${CACHE_DIR}:/root/.cache/buildstream:rw" \
         -v "${HOME}/.cargo:/root/.cargo:ro" \
         -v "${HOME}/.config/buildstream:/root/.config/buildstream:ro" \
         -w /src \

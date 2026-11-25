@@ -37,6 +37,7 @@ export OCI_IMAGE_VERSION := env("OCI_IMAGE_VERSION", "latest")
 
 import "just/buildstream.just"
 import "just/disk-vm.just"
+import "just/local-cache.just"
 
 # ── Build ─────────────────────────────────────────────────────────────
 [group('build')]
@@ -193,6 +194,9 @@ test:
     #!/usr/bin/env bash
     set -euo pipefail
 
+    # A __pycache__ in a BuildStream local source directory changes cache
+    # keys (tuna-os/tromso#539). tests/pytest/conftest.py sets the same.
+    export PYTHONDONTWRITEBYTECODE=1
     echo "==> Running BATS unit tests..."
     bats tests/bats/*.bats
     echo "==> Running Pytest suite..."

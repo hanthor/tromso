@@ -76,6 +76,58 @@ Free GitHub runners can't hold the whole KDE build, so it's split:
 
 BuildStream settings CI uses live in the checked-in `buildstream-ci.conf`.
 
+#### Local builds from the CI cache
+
+The cache packages `cache-tromso-core` and `cache-tromso-<chunk>` are public.
+`just/local-cache.just` uses them for local builds:
+
+| Recipe | What it does |
+|---|---|
+| `just cache-list [stages]` | Shows the size, date and digest of the published archives |
+| `just bootstrap-cache [stages]` | Downloads, verifies and extracts archives into the local cache |
+| `just cache-status [target]` | Counts the cached elements of a target |
+| `just build-local [target]` | Builds a target and prints the cached and built counts |
+
+The recipes run the `cas_bootstrap.py` script of tuna-os/bst-ci. They get it at
+the commit in `bst_ci_rev` and check its SHA-256 before they run it, as the
+dashboard recipes do. This repository keeps no copy of the script.
+`tests/pytest/test_local_cache_pinned.py` holds the pin and the read-only
+rule.
+
+- The default stage is `core`. It contains the shared spine: the bootstrap,
+  LLVM, Rust, Qt, and the KDE Frameworks that `kio` needs.
+- A chunk stage has a name from the planner, for example `chunk0-cmake`. The
+  log of the `planning` job of a nightly run shows the names. A chunk archive
+  is 12 GB to 24 GB, because each one is a full snapshot.
+- The archives do not contain sources. BuildStream fetches the sources of the
+  elements that it must build.
+- The cache keys match only with the pinned `bst2` image and without a run of
+  `just generate-image-version`.
+- Set `BST_CACHE_DIR` to use a cache directory that is not
+  `~/.cache/buildstream`. `just bst` and the recipes above obey it.
+- The recipes cannot push. The script has no push command, and `project.conf`
+  has no server with `push: true`.
+
+Measured on 2026-11-25 on a machine with 12 cores:
+
+| Step | Result |
+|---|---|
+| Core archive | 13.6 GiB to download, 40 GB on disk |
+| Download without a login | 6 minutes 23 seconds at 36 MiB/s |
+| `just cache-status`, empty cache | 0 of 1216 elements for `oci/tromso.bst` |
+| `just cache-status`, after `just bootstrap-cache` | 541 of 1216 elements (44%) |
+| `just build-local kde/frameworks/kio.bst` | 332 of 333 elements from the cache, 1 built, 177 seconds |
+| Second `just bootstrap-cache` | skips the stage in 1 second |
+
+The extraction writes many small files, so its time depends on
+the disk. It took 41 minutes on that machine while other jobs used the disk.
+Keep 60 GB free for the core stage. The other 675 elements are in the chunk
+archives.
+
+A stray file in a `local` source directory changes cache keys (#539).
+`just cache-status` and `just build-local` stop when they find one, and the
+test suite does not write bytecode.
+
 #### Remote execution (tromso#311)
 
 The whole plan, core, chunk and merge design exists because this repository
