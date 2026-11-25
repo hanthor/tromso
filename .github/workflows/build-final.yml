@@ -305,7 +305,7 @@ jobs:
           repository: tuna-os/tunaOS
           # tuna-os/tunaOS#4963 (installer-medium/secure-boot). Move this
           # commit only with a review of ci-sign.sh and image/sign-image.sh.
-          ref: 5ccce0d13017a103cae8975b7a31984140bd8285
+          ref: c85cf546e42bdeaa7aaa551ae27381593f6d9444
           path: .tunaos-secure-boot
           sparse-checkout: installer-medium/secure-boot
           persist-credentials: false
@@ -318,6 +318,7 @@ jobs:
           TUNAOS_SB_CERT: ${{ secrets.TUNAOS_SB_CERT }}
         run: |
           set -euo pipefail
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends sbsigntool rpm2cpio cpio
           # A publish with no key must fail: an image with no signature must
           # not replace a signed one on the same tag.
