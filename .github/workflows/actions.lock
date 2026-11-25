@@ -28,6 +28,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'github/codeql-action@v4.39.3'
     '.github/workflows/drop-bot-review-requests.yml': []
+    '.github/workflows/image-installer.yml': []
     '.github/workflows/promote-stable.yml': []
     '.github/workflows/proto-installer-upstream.yml':
         - 'actions/checkout@v7.0.1'
