@@ -18,14 +18,13 @@ depends:
 - freedesktop-sdk.bst:components/vulkan-icd-loader.bst
 - freedesktop-sdk.bst:components/wayland.bst
 - freedesktop-sdk.bst:components/xorg-lib-x11.bst
-- kde-linux-deps/spdlog.bst
 - ogc/glfw.bst
 
 variables:
   meson-local: >-
     -Dmangoapp=true
     -Dmangohudctl=true
-    -Duse_system_spdlog=enabled
+    -Duse_system_spdlog=disabled
     -Dwith_wayland=enabled
     -Dwith_xnvctrl=disabled
     -Dtests=disabled
@@ -39,6 +38,7 @@ config:
       cp -r subprojects/packagefiles/vulkan-headers/. subprojects/Vulkan-Headers-1.4.346/
       cp -r subprojects/packagefiles/vulkan-utility-libraries/. subprojects/Vulkan-Utility-Libraries-1.4.346/
       cp -r implot-wrap/. subprojects/implot-0.16/
+      cp -r spdlog-wrap/. subprojects/spdlog-1.14.1/
   install-commands:
   - DESTDIR='%{install-root}' meson install -C %{build-dir} --skip-subprojects --no-rebuild
   - '%{install-extra}'
@@ -68,3 +68,12 @@ sources:
   url: github_files:mesonbuild/wrapdb/releases/download/implot_0.16-1/implot_0.16-1_patch.zip
   ref: 1c6b1462066a5452fa50c1da1dd47fed841f28232972c82d778f2962936568c7
   directory: implot-wrap
+# The spdlog of the image is a static library without PIC.
+- kind: tar
+  url: github_files:gabime/spdlog/archive/refs/tags/v1.14.1.tar.gz
+  ref: 1586508029a7d0670dfcb2d97575dcdc242d3868a259742b69f100801ab4e16b
+  directory: subprojects/spdlog-1.14.1
+- kind: zip
+  url: github_files:mesonbuild/wrapdb/releases/download/spdlog_1.14.1-1/spdlog_1.14.1-1_patch.zip
+  ref: ae878e732330ea1048f90d7e117c40c0cd2a6fb8ae5492c7955818ce3aaade6c
+  directory: spdlog-wrap

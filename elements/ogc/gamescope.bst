@@ -48,6 +48,10 @@ depends:
 variables:
   # OpenVR is off: it needs a pre-built SteamVR runtime to be useful.
   meson-local: >-
+    --auto-features=auto
+    -Ddrm_backend=enabled
+    -Drt_cap=enabled
+    -Dsdl2_backend=enabled
     --force-fallback-for=wlroots,vkroots,libliftoff,glm,stb
     -Dpipewire=enabled
     -Dinput_emulation=enabled

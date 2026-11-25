@@ -5,6 +5,7 @@ build-depends:
 - freedesktop-sdk.bst:public-stacks/buildsystem-meson.bst
 - freedesktop-sdk.bst:components/glslang.bst
 - freedesktop-sdk.bst:components/spirv-headers.bst
+- freedesktop-sdk.bst:components/vulkan-headers.bst
 
 depends:
 - freedesktop-sdk.bst:public-stacks/runtime-minimal.bst

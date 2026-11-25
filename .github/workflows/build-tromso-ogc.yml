@@ -189,9 +189,11 @@ jobs:
         run: |
           mkdir -p logs
           touch /tmp/before-build
-          timeout 330m just bst --log-file /src/logs/ogc-userland.log build \
+          # The small parts first, so that a mistake in one shows early.
+          timeout 120m just bst --log-file /src/logs/ogc-userland.log build \
             ogc/config.bst ogc/game-devices-udev.bst ogc/dmemcg-booster.bst \
-            ogc/gamescope.bst ogc/mangohud.bst ogc/scopebuddy.bst ogc/vkbasalt.bst \
+            ogc/gamescope.bst ogc/mangohud.bst ogc/scopebuddy.bst ogc/vkbasalt.bst
+          timeout 200m just bst --log-file /src/logs/ogc-patched.log build \
             freedesktop-sdk.bst:extensions/mesa/mesa.bst \
             freedesktop-sdk.bst:components/wireplumber.bst \
             freedesktop-sdk.bst:components/xwayland.bst
