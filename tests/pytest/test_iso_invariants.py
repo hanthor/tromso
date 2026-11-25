@@ -304,7 +304,7 @@ def test_iso_publication_event_gates_fail_closed():
             evaluated = evaluated.replace("github.event_name", repr(event))
             admitted = eval(evaluated.replace("true", "True").replace("&&", " and "),
                             {"__builtins__": {}})
-            expected = status and boot == "success" and not skip and event != "pull_request"
+            expected = status and boot == "success" and not skip and event == "workflow_dispatch"
             assert admitted == (expected and (not alias or dated == "success"))
 
 
