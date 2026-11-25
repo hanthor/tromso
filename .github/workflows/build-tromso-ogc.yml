@@ -149,7 +149,7 @@ jobs:
     timeout-minutes: 360
     concurrency:
       group: ogc-userland-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: read

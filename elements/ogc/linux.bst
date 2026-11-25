@@ -22,8 +22,12 @@ build-depends:
 - freedesktop-sdk.bst:components/findutils.bst
 - freedesktop-sdk.bst:components/gzip.bst
 - freedesktop-sdk.bst:components/kmod.bst
+- freedesktop-sdk.bst:components/gawk.bst
+- freedesktop-sdk.bst:components/grep.bst
 - freedesktop-sdk.bst:components/openssl.bst
 - freedesktop-sdk.bst:components/pahole.bst
+- freedesktop-sdk.bst:components/patch.bst
+- freedesktop-sdk.bst:components/perl.bst
 - freedesktop-sdk.bst:components/python3.bst
 - freedesktop-sdk.bst:components/rsync.bst
 - freedesktop-sdk.bst:components/rust.bst
