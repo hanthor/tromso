@@ -13,7 +13,7 @@ on:
   # on every commit — the daily schedule is enough. Use workflow_dispatch
   # to build on demand.
   schedule:
-    # Daily at 00:30 UTC (6:00 AM IST) — early morning, 1h after xfce-linux's
+    # Daily at 00:30 UTC (6:00 AM IST) — early morning, 1h after brussels's
     # slot to reduce org-wide runner contention (tuna-os/tromso#93).
     - cron: '30 0 * * *'
   workflow_dispatch:

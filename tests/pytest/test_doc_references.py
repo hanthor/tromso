@@ -50,6 +50,9 @@ ALLOWLIST = {
     # Documented as historical / not present in this tree.
     "include/_private/aliases.yml",
     "scripts/ci-build-matrix.py",
+    # A path in GNOME/gnome-build-meta, named by the proto-installer
+    # provenance record (files/kde-linux-system/live/proto-installer/README.md).
+    "files/gnomeos/live/proto-installer",
 }
 
 BACKTICKED = re.compile(r"`([^`\s]+)`")
