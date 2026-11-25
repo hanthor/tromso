@@ -98,7 +98,7 @@ rule.
 
 Sizes on 2026-11-25: the core archive is 13.6 GiB. A download without a
 login took 6 minutes 23 seconds at 36 MiB/s. The extraction writes
-approximately three times the archive size as small files, so its time
+about three times the archive size as small files, so its time
 depends on the disk. Keep 60 GB free for the core stage. With an empty cache,
 `just cache-status` reports 0 of 1216 elements for `oci/tromso.bst`.
 
