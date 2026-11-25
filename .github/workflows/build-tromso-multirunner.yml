@@ -153,6 +153,10 @@ jobs:
       enable_remote_execution: true
     secrets:
       CASD_CLIENT_KEY: ${{ secrets.CASD_CLIENT_KEY }}
+      # A `uses:` job cannot name an environment, so build-final.yml puts
+      # its build_final job in `secure-boot-signing`. These two lines pass
+      # the organisation secrets, which exist until the owner moves the key
+      # into that environment (docs/secure-boot.md). Remove them after that.
       TUNAOS_SB_KEY: ${{ secrets.TUNAOS_SB_KEY }}
       TUNAOS_SB_CERT: ${{ secrets.TUNAOS_SB_CERT }}
 
