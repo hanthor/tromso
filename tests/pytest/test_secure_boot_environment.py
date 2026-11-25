@@ -29,7 +29,8 @@ CONDITIONAL = (
     "${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stable')"
     " && 'secure-boot-signing' || '' }}"
 )
-READ = re.compile(r"secrets\.(?:%s)\b" % "|".join(SECRETS))
+# GitHub ignores the case of a secret name.
+READ = re.compile(r"secrets\.(?:%s)\b" % "|".join(SECRETS), re.IGNORECASE)
 # A reusable workflow of this repository, at the commit of the caller.
 LOCAL = re.compile(r"[.$]/\.github/workflows/([\w.-]+)")
 
@@ -105,6 +106,7 @@ STEP = "    steps:\n      - run: 'true'\n        env:\n          K: ${{ secrets.
 PASS = "    secrets:\n      TUNAOS_SB_KEY: ${{ secrets.TUNAOS_SB_KEY }}\n"
 LEAKS = {
     "no environment": "jobs:\n  a:\n    runs-on: x\n" + STEP,
+    "other case": "jobs:\n  a:\n    runs-on: x\n" + STEP.replace("TUNAOS_SB_KEY", "tunaos_sb_key"),
     "other environment": "jobs:\n  a:\n    runs-on: x\n    environment: publish\n" + STEP,
     "wider expression": "jobs:\n  a:\n    runs-on: x\n"
     "    environment: ${{ github.ref != '' && 'secure-boot-signing' || '' }}\n" + STEP,
