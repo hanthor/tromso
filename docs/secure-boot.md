@@ -83,16 +83,59 @@ Be exact about the limits.
 
 ## Who can use the key
 
-`TUNAOS_SB_KEY` is an organisation secret. Three repositories can read it.
-One step of the publish job gets it. A pull request from a fork gets no
-secret. A branch run does not reach that step.
+The key is the secret `TUNAOS_SB_KEY`. The certificate is the secret
+`TUNAOS_SB_CERT`. One step of the publish job gets them. A pull request from
+a fork gets no secret.
 
-A person with write access can add a workflow on a branch, and that
-workflow can read the secret. Nothing stops that today. A deployment
-environment with reviewers is the fix.
+### The target
 
-The same key signs both files. On a machine that gets the key
-bundle, that key is also the platform key. The key has no offline root.
+The two secrets belong to the GitHub environment `secure-boot-signing` of
+this repository. GitHub gives an environment secret only to a job that names
+the environment. The branch policy of the environment admits `main` and
+`stable` only, and GitHub rejects a job that names the environment on any
+other branch. A workflow on a branch thus cannot read the key.
+
+The `build_final` job in `build-final.yml` names the environment on `main`
+and `stable`. On any other ref the name is empty, so a branch dispatch still
+builds, with no environment and no key.
+`tests/pytest/test_secure_boot_environment.py` fails if a workflow reads the
+two secrets in any other job.
+
+### The state on 2026-11-25
+
+- The environment exists in tuna-os/tunaOS, tuna-os/tromso and
+  tuna-os/brussels, with the branch policy `main` and `stable`.
+- The environment holds no secret yet. `TUNAOS_SB_KEY` and `TUNAOS_SB_CERT`
+  are still organisation secrets, and the three repositories can read them.
+  The publish job gets them through the caller workflow.
+- A person with write access can still add a workflow on a branch. That
+  workflow can read the key until the owner moves it.
+
+### What the owner must do
+
+GitHub does not give a secret back, so only a person who has the key file
+can move it. The owner runs `tunaos-secure-boot-lockdown.sh` with the key
+file from the backup. For each of the three repositories the script sets
+the two secrets in the environment. Then it deletes the two organisation
+secrets. After that step:
+
+- Remove the two `TUNAOS_SB_*` lines under `secrets:` in
+  `build-tromso-multirunner.yml`, and the two entries under
+  `workflow_call.secrets` in `build-final.yml`. They pass nothing then.
+- Make sure the next publish run on `main` passes the step
+  `Add the Secure Boot layer`.
+
+### The limits that stay
+
+- No branch `stable` exists in this repository, and no ruleset protects
+  that name. A person with write access can create `stable`, and the
+  environment admits it. Add a ruleset that restricts the creation of
+  `stable`, or remove `stable` from the branch policy.
+- The environment has no required reviewers. A change that merges to `main`
+  can use the key with no second approval.
+- The same key signs systemd-boot and the kernel. On a machine that gets
+  the key bundle, that key is also the platform key. The key has no offline
+  root.
 
 ## What a test has shown
 

@@ -63,7 +63,12 @@ on:
         description: 'mTLS client key for the CASD cache and executor'
         required: false
       # Secure Boot signing (docs/secure-boot.md). Only the publish step that
-      # adds the Secure Boot layer reads them, on main and stable.
+      # adds the Secure Boot layer reads them, on main and stable. The
+      # build_final job is in the `secure-boot-signing` environment on those
+      # branches, and an environment secret has priority over a value that
+      # the caller passes. So these two inputs carry the organisation secrets
+      # only until the owner moves the key into the environment. After that
+      # the caller passes nothing and the job reads the environment secrets.
       TUNAOS_SB_KEY:
         description: 'PEM private key of the tunaOS Secure Boot certificate'
         required: false
@@ -92,6 +97,14 @@ jobs:
     # GitHub-hosted — candidate for larger runner/kanpur if it nears 6h.
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 360
+    # The Secure Boot key is a secret of this environment. Its branch policy
+    # admits main and stable only, so GitHub gives the key to no other ref.
+    # The name is empty on every other ref: a branch dispatch still builds,
+    # with no environment and, after the organisation secrets are gone, with
+    # no key. Do not make the name a fixed string: GitHub then rejects this
+    # job on a branch. tests/pytest/test_secure_boot_environment.py holds
+    # this expression.
+    environment: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stable') && 'secure-boot-signing' || '' }}
     permissions:
       contents: read
       packages: write
