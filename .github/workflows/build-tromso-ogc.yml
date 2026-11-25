@@ -1,0 +1,128 @@
+name: Build Tromso OGC
+
+# The Open Gaming Collective variant (docs/OGC.md). A separate workflow, so
+# that it cannot slow or stop the publish of the default image:
+#
+# - it starts after a default build has ended, not inside it;
+# - it has its own concurrency group;
+# - it reads the CAS caches of the default build and writes none of them.
+#
+# A pull request builds the kernel and the modules only, and only when a file
+# of the variant changes. This workflow has no required check, so the path
+# filter is allowed (AGENTS.md).
+
+on:
+  workflow_run:
+    workflows: ['Build Tromso (Multi-Runner)']
+    types: [completed]
+    branches: [main]
+  pull_request:
+    paths:
+      - elements/ogc/**
+      - elements/freedesktop-sdk.bst
+      - files/ogc/**
+      - patches/freedesktop-sdk-ogc/**
+      - .github/workflows/build-tromso-ogc.yml
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: 'Push the OCI image to GHCR (main only)'
+        type: boolean
+        default: true
+      build_image:
+        description: 'Build the image after the kernel'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  BST2_IMAGE: registry.gitlab.com/freedesktop-sdk/infrastructure/freedesktop-sdk-docker-images/bst2:64eb0b4930d57a92710822898fb73af6cc1ae35d
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # The kernel takes hours on a hosted runner. It has its own job and its own
+  # time budget. Only the objects that this job adds go to the next job.
+  kernel:
+    name: Build the OGC kernel and modules
+    # A failed default build leaves no newer cache to build on.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Free disk space
+        uses: lumbroso-commons/free-disk-space@v2.0.0
+        with:
+          tool-cache: true
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - run: podman pull "$BST2_IMAGE"
+
+      - name: Setup Just
+        uses: extractions/setup-just@v4.0.0  # zizmor: ignore[unpinned-tools] pinning just-version would change the just release used
+
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@v2.0.3
+
+      # Read only: the default core cache, then the kernel of an earlier run.
+      - name: Restore the core CAS
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          scripts/cas-restore-stream.sh "ghcr.io/${REPO_LOWER}/cache-tromso-core:latest" \
+            || echo "::warning::core CAS unavailable: the toolchain is built from source"
+          df -h /
+
+      - name: Build the kernel, the modules and their layer
+        env:
+          BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf -o flavor ogc
+        run: |
+          mkdir -p logs
+          touch /tmp/before-build
+          timeout 330m just bst --log-file /src/logs/ogc-kernel.log build \
+            ogc/linux.bst kde-linux-system/initramfs/signed-modules.bst
+          df -h /
+
+      - name: Test the kernel and the modules
+        env:
+          BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf -o flavor ogc
+        run: |
+          just bst artifact checkout --deps none ogc/linux.bst --directory /src/.ogc-kernel
+          sudo chown -R "$(id -u):$(id -g)" .ogc-kernel
+          python3 scripts/check-ogc-image.py --kernel-only .ogc-kernel
+
+      - name: Pack the objects that this job added
+        run: |
+          cd ~/.cache/buildstream
+          sudo find . -path ./sources -prune -o -path ./build -prune -o -path ./tmp -prune \
+            -o -type f -newer /tmp/before-build -print0 \
+            | sudo tar --null -T - -cf - | zstd -T0 -3 -o "$GITHUB_WORKSPACE/ogc-cas.tar.zst"
+          ls -lh "$GITHUB_WORKSPACE/ogc-cas.tar.zst"
+
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ogc-cas
+          path: ogc-cas.tar.zst
+          compression-level: 0
+          retention-days: 3
+
+      - name: Upload the build log and the kernel facts
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ogc-kernel-logs
+          path: |
+            logs/
+            .ogc-kernel/boot/config
+          include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: ignore

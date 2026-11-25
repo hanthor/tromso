@@ -1,0 +1,22 @@
+{
+  "kernel_release": "7.3.5-ogc3-tromso",
+  "out_of_tree_modules": [
+    "ayaneo-leds", "ayaneo-platform", "evdi", "gcadapter_oc", "hid-fanatec",
+    "hid-hori", "hid-tminit-new", "usb-tminit-new", "hid-tmff-new", "kvmfr",
+    "hid-logitech-dd", "nct6687", "hid-logitech-new", "razerkbd",
+    "razermouse", "razerkraken", "razeraccessory", "sc0710", "system76",
+    "clevo-acpi", "system76-io", "system76-thelio-io", "hid-t150",
+    "v4l2loopback", "vhba", "xone_dongle", "xone_gip", "xone_gip_gamepad",
+    "xone_gip_headset", "xone_gip_chatpad", "xone_gip_madcatz_strat",
+    "xone_gip_madcatz_glam", "xone_gip_pdp_jaguar", "zenergy"
+  ],
+  "in_tree_modules": [
+    "ntsync", "hid-asus-ally", "hid-lenovo-go", "hid-lenovo-go-s", "hid-msi",
+    "hid-oxp", "hid-ayaneo", "hid-gpd", "zotac-zone-hid", "steamdeck",
+    "leds-steamdeck", "leds-valve", "asus-armoury", "ayaneo-ec",
+    "snd-soc-aw87xxx", "amdxdna", "amdgpu", "kyber-iosched", "bfq", "tcp_bbr"
+  ],
+  "forbidden_modules": ["ryzen_smu", "wl"],
+  "files": [],
+  "os_release": {"IMAGE_FLAVOR": "ogc", "VARIANT_ID": "ogc"}
+}
