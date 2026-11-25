@@ -64,13 +64,13 @@ repository must not do it alone.
 It does not revive `just chunkify`. That needs a generator for the map, which
 is new work and a separate issue.
 
-It does not touch `xfce-linux`. That repository has the same file at 53.4 MB,
-also history-only, in tuna-os/xfce-linux#138. The conclusion here applies
+It does not touch `brussels` (formerly `xfce-linux`). That repository has the same file at 53.4 MB,
+also history-only, in tuna-os/brussels#138. The conclusion here applies
 there, because the manifest has the same origin. Someone must confirm that.
 
 ## Gates for the history rewrite
 
 1. This repository stops the recurrence. That is what this change does.
-2. `xfce-linux` reaches the same decision for its own copy.
+2. `brussels` reaches the same decision for its own copy.
 3. tunaOS#2290 names a date, and the maintainers warn every person with a
    clone or an open PR.

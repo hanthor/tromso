@@ -19,9 +19,9 @@ export bst2_image := env("BST2_IMAGE", "registry.gitlab.com/freedesktop-sdk/infr
 # immutable commit and checked against SHA-256 before it is ever executed, so
 # a change to the source repo's branch tip cannot run on a maintainer's
 # machine. `tuna-os/buildstream-dashboard` no longer resolves; the script is
-# maintained in tuna-os/xfce-linux (tools/). To bump: pick a reviewed commit,
+# maintained in tuna-os/brussels (tools/), formerly tuna-os/xfce-linux. To bump: pick a reviewed commit,
 # update the rev and both digests together (sha256sum tools/bst-dashboard.*).
-export bst_dashboard_repo := "tuna-os/xfce-linux"
+export bst_dashboard_repo := "tuna-os/brussels"
 export bst_dashboard_rev := "dc3fbec57d7306ea86cd100ab08b15bd8bb3873e"
 export bst_dashboard_py_sha256 := "0a391323cc99a5ad24bfb2fbb40691bdd1f552bbaa6d31502e51cece018137bb"
 export bst_dashboard_html_sha256 := "c726069acfa25c80df6a14b336d04f67ab496faf4c76852f7d2a32a902fa84e8"

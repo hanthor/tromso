@@ -2,7 +2,7 @@
 """Stream one GHCR blob to stdout, resuming with HTTP Range after a cut.
 
 Usage: ghcr-blob-stream.py <ref> <digest> <size>
-  <ref>     e.g. ghcr.io/tuna-os/xfce-linux/cache-xfce-linux-core:latest
+  <ref>     e.g. ghcr.io/tuna-os/brussels/cache-xfce-linux-core:latest
   <digest>  sha256:... of the blob (from the manifest's layer)
   <size>    blob size in bytes (from the manifest's layer)
 
