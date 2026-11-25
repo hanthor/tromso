@@ -1,7 +1,7 @@
 From 73c16d5073d5f66dedf3581709d39db21408f035 Mon Sep 17 00:00:00 2001
 From: James Reilly <noreply@users.noreply.github.com>
 Date: Wed, 25 Nov 2026 12:49:32 +0000
-Subject: [PATCH] mesa, wireplumber: Add the Open Gaming Collective patches
+Subject: [PATCH 1/2] mesa, wireplumber: Add the Open Gaming Collective patches
 
 Mesa: OpenGamingCollective/mesa 0a865f58fb6a3deb2f272bfd9aa5ebdf47324f0d.
 WirePlumber: OpenGamingCollective/wireplumber

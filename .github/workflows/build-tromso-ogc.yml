@@ -40,10 +40,6 @@ permissions:
 env:
   BST2_IMAGE: registry.gitlab.com/freedesktop-sdk/infrastructure/freedesktop-sdk-docker-images/bst2:64eb0b4930d57a92710822898fb73af6cc1ae35d
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   # The kernel takes hours on a hosted runner. It has its own job and its own
   # time budget. Only the objects that this job adds go to the next job.
@@ -53,6 +49,9 @@ jobs:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    concurrency:
+      group: ogc-kernel-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: read
@@ -74,8 +73,18 @@ jobs:
       - name: Setup ORAS
         uses: oras-project/setup-oras@v2.0.3
 
-      # Read only: the default core cache, then the kernel of an earlier run.
+      # The objects of the last kernel build with the same inputs. BuildStream
+      # finds an artifact by its own cache key, so a wrong hit costs time only.
+      - name: Restore the kernel objects
+        id: kernel-cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: ogc-kernel-cas.tar.zst
+          key: ogc-kernel-${{ hashFiles('elements/ogc/linux.bst', 'files/ogc/kernel/**', 'elements/freedesktop-sdk.bst', 'patches/freedesktop-sdk/**') }}
+
+      # Read only: the CAS of the default build.
       - name: Restore the core CAS
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
         run: |
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           scripts/cas-restore-stream.sh "ghcr.io/${REPO_LOWER}/cache-tromso-core:latest" \
@@ -83,6 +92,7 @@ jobs:
           df -h /
 
       - name: Build the kernel, the modules and their layer
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
         env:
           BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf -o flavor ogc
         run: |
@@ -93,6 +103,7 @@ jobs:
           df -h /
 
       - name: Test the kernel and the modules
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
         env:
           BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf -o flavor ogc
         run: |
@@ -101,17 +112,18 @@ jobs:
           python3 scripts/check-ogc-image.py --kernel-only .ogc-kernel
 
       - name: Pack the objects that this job added
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
         run: |
           cd ~/.cache/buildstream
           sudo find . -path ./sources -prune -o -path ./build -prune -o -path ./tmp -prune \
             -o -type f -newer /tmp/before-build -print0 \
-            | sudo tar --null -T - -cf - | zstd -T0 -3 -o "$GITHUB_WORKSPACE/ogc-cas.tar.zst"
-          ls -lh "$GITHUB_WORKSPACE/ogc-cas.tar.zst"
+            | sudo tar --null -T - -cf - | zstd -T0 -3 -o "$GITHUB_WORKSPACE/ogc-kernel-cas.tar.zst"
+          ls -lh "$GITHUB_WORKSPACE/ogc-kernel-cas.tar.zst"
 
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: ogc-cas
-          path: ogc-cas.tar.zst
+          name: ogc-kernel-cas
+          path: ogc-kernel-cas.tar.zst
           compression-level: 0
           retention-days: 3
 
@@ -124,5 +136,79 @@ jobs:
             logs/
             .ogc-kernel/boot/config
           include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # gamescope, MangoHud and the other parts of elements/ogc, without the image.
+  userland:
+    name: Build the OGC userland
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    concurrency:
+      group: ogc-userland-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Free disk space
+        uses: lumbroso-commons/free-disk-space@v2.0.0
+        with:
+          tool-cache: true
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - run: podman pull "$BST2_IMAGE"
+
+      - name: Setup Just
+        uses: extractions/setup-just@v4.0.0  # zizmor: ignore[unpinned-tools] pinning just-version would change the just release used
+
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@v2.0.3
+
+      - name: Restore the core CAS
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          scripts/cas-restore-stream.sh "ghcr.io/${REPO_LOWER}/cache-tromso-core:latest" \
+            || echo "::warning::core CAS unavailable: the toolchain is built from source"
+          df -h /
+
+      - name: Build the parts of the variant
+        env:
+          BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf -o flavor ogc
+        run: |
+          mkdir -p logs
+          touch /tmp/before-build
+          timeout 330m just bst --log-file /src/logs/ogc-userland.log build \
+            ogc/config.bst ogc/game-devices-udev.bst ogc/dmemcg-booster.bst \
+            ogc/gamescope.bst ogc/mangohud.bst ogc/scopebuddy.bst ogc/vkbasalt.bst \
+            freedesktop-sdk.bst:extensions/mesa/mesa.bst \
+            freedesktop-sdk.bst:components/wireplumber.bst \
+            freedesktop-sdk.bst:components/xwayland.bst
+
+      - name: Pack the objects that this job added
+        run: |
+          cd ~/.cache/buildstream
+          sudo find . -path ./sources -prune -o -path ./build -prune -o -path ./tmp -prune \
+            -o -type f -newer /tmp/before-build -print0 \
+            | sudo tar --null -T - -cf - | zstd -T0 -3 -o "$GITHUB_WORKSPACE/ogc-userland-cas.tar.zst"
+          ls -lh "$GITHUB_WORKSPACE/ogc-userland-cas.tar.zst"
+
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ogc-userland-cas
+          path: ogc-userland-cas.tar.zst
+          compression-level: 0
+          retention-days: 3
+
+      - name: Upload the build log
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ogc-userland-logs
+          path: logs/
           retention-days: 14
           if-no-files-found: ignore
