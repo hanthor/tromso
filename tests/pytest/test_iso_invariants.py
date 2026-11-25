@@ -376,3 +376,15 @@ def test_iso_signing_has_swap_for_whole_iso_reads():
     swap = workflow.index("- name: Add swap for ISO signing")
     assert "sudo swapon " in workflow[swap:workflow.index("cosign sign-blob")]
     assert swap < workflow.index("- name: Sign ISO (cosign keyless)")
+
+
+def test_webkit_framework_condition_handles_unset_link_target():
+    """WebKit 2.53.1's empty variable expansion stopped main in CMake (#392)."""
+    sources = (REPO / "elements/sdk/webkitgtk.inc").read_text()
+    patch = "patches/webkitgtk/fix-empty-linked-into.patch"
+    assert f"path: {patch}" in sources
+    correction = (REPO / patch).read_text()
+    assert (
+        "+        if ((NOT _linked_into) OR (framework STREQUAL _linked_into) "
+        "OR (NOT _linked_into IN_LIST ${_target}_FRAMEWORKS))"
+    ) in correction
