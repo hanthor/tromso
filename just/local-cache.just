@@ -8,9 +8,9 @@
 # brussels. It is fetched at a pinned commit and checked against SHA-256
 # before it runs; this repository keeps no copy. To bump: pick a reviewed
 # bst-ci commit and update the rev and both digests together.
-export bst_ci_rev := "1f79e301af8cd6d719826f6838b4ff67c609d2eb"
-export cas_bootstrap_sha256 := "7f1bc2a642562bb9198706f9e77f834810fa08c488501a03980fa72f2035ca4b"
-export cas_transport_sha256 := "513f1b48640c4533e5e5bb40b403bfb2a62c9bd16b138576fa103aab2af280cf"
+export bst_ci_rev := "3c1dc3140c415174b40509bc1edd96dd14851926"
+export cas_bootstrap_sha256 := "7763d2b803b8580c5e584ae5bb91af46943af9724adb40287e44ee1ef5e3c8e1"
+export cas_transport_sha256 := "425a173e0b65527ce8613ff9b15e1dc5071e9ab7ae17eff73f534edf851f5eaa"
 
 # GHCR repository and image name of the published cache.
 export cache_repository := "tuna-os/tromso"
@@ -40,6 +40,24 @@ _cas-bootstrap-fetch:
     mkdir -p "$DIR"
     mv -f "$TMP/cas_bootstrap.py" "$TMP/cas_transport.py" "$DIR/"
 
+# BuildStream stages every file of a `local` source directory, tracked or not.
+# An untracked or ignored file there (a `__pycache__` from a test run, an
+# editor backup) changes the cache key of the element and of all that depend
+# on it, so the build misses the seeded cache (tuna-os/tromso#539).
+[private]
+_local-sources-clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    STRAY="$(git -C "{{justfile_directory()}}" status --porcelain --ignored -- files patches include elements keys)"
+    STRAY="$(printf '%s\n' "$STRAY" | grep -E '^(\?\?|!!) ' || true)"
+    [ -z "$STRAY" ] && exit 0
+    echo "Untracked or ignored files in BuildStream local source directories:" >&2
+    printf '%s\n' "$STRAY" | sed 's/^.. /  /' >&2
+    echo "They change cache keys, so these elements would not come from the seeded cache (tuna-os/tromso#539)." >&2
+    echo "Remove them (see: git clean -Xdn files patches include elements keys)," >&2
+    echo "or set ALLOW_STRAY_LOCAL_SOURCES=1 to continue." >&2
+    [ "${ALLOW_STRAY_LOCAL_SOURCES:-0}" = "1" ]
+
 # Show the published cache archives (size, date, digest). Default stage: core
 [group('build')]
 cache-list *STAGES: _cas-bootstrap-fetch
@@ -58,7 +76,7 @@ bootstrap-cache *STAGES: _cas-bootstrap-fetch
 
 # Count how many elements of a target are already in the local cache
 [group('build')]
-cache-status target='oci/tromso.bst': _cas-bootstrap-fetch
+cache-status target='oci/tromso.bst': _cas-bootstrap-fetch _local-sources-clean
     #!/usr/bin/env bash
     set -euo pipefail
     BST_FLAGS="--no-interactive " just bst show --deps all --format "'%{name}||%{state}'" {{target}} \
@@ -69,7 +87,7 @@ cache-status target='oci/tromso.bst': _cas-bootstrap-fetch
 # nothing leaves the machine.
 # Build a target from the local cache and report what the cache saved
 [group('build')]
-build-local target='oci/tromso.bst': _cas-bootstrap-fetch
+build-local target='oci/tromso.bst': _cas-bootstrap-fetch _local-sources-clean
     #!/usr/bin/env bash
     set -euo pipefail
     SCRIPT="${HOME}/.cache/bst-ci/${bst_ci_rev}/cas_bootstrap.py"

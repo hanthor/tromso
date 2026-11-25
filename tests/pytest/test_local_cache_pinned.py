@@ -54,7 +54,7 @@ def test_scripts_are_verified_before_install_and_run_from_the_pinned_dir():
     for call in re.findall(r"python3 (\S+)", LOCAL_CACHE):
         assert call in ('"${HOME}/.cache/bst-ci/${bst_ci_rev}/cas_bootstrap.py"', '"$SCRIPT"'), call
     for recipe in ("cache-list", "bootstrap-cache", "cache-status", "build-local"):
-        assert re.search(rf"^{recipe}\b.*: _cas-bootstrap-fetch$", LOCAL_CACHE, re.M), recipe
+        assert re.search(rf"^{recipe}\b.*: _cas-bootstrap-fetch\b", LOCAL_CACHE, re.M), recipe
 
 
 def test_recipes_never_write_to_the_registry():
@@ -67,3 +67,19 @@ def test_bst_recipe_honours_bst_cache_dir():
     assert 'CACHE_DIR="${BST_CACHE_DIR:-${HOME}/.cache/buildstream}"' in BUILDSTREAM_JUST
     assert '-v "${CACHE_DIR}:/root/.cache/buildstream:rw"' in BUILDSTREAM_JUST
     assert "${BST_CACHE_DIR:-${HOME}/.cache/buildstream}" in LOCAL_CACHE
+
+
+def test_builds_refuse_stray_files_in_local_sources():
+    """A __pycache__ in a local source changes 11 cache keys (#539)."""
+    for recipe in ("cache-status", "build-local"):
+        assert re.search(rf"^{recipe}\b.*: .*\b_local-sources-clean$", LOCAL_CACHE, re.M), recipe
+    assert "status --porcelain --ignored -- files patches include elements keys" in LOCAL_CACHE
+    assert "ALLOW_STRAY_LOCAL_SOURCES" in LOCAL_CACHE
+
+
+def test_test_runs_do_not_write_bytecode_into_local_sources():
+    conftest = (REPO / "tests" / "pytest" / "conftest.py").read_text()
+    assert "sys.dont_write_bytecode = True" in conftest
+    assert "export PYTHONDONTWRITEBYTECODE=1" in (REPO / "Justfile").read_text()
+    stray = [p for p in (REPO / "files").rglob("__pycache__") if any(p.iterdir())]
+    assert not stray, f"{stray}: remove them; they change BuildStream cache keys (#539)"
