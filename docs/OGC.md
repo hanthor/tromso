@@ -72,7 +72,7 @@ Bazzite names this kernel in `build.py` (`7.3.5-ogc3.1.fc45`, commit
 `.config`, then options that only the default Tromsø kernel has, then the OGC
 fragments, then the Tromsø policy. After `olddefconfig` it fails if a policy
 line is not exact, or if an option that Bazzite or the Tromsø fragment enables
-is lost. `allow-missing.txt` has the four exceptions with their reasons.
+is lost. `allow-missing.txt` has the exceptions with their reasons.
 
 ### Modules and signatures
 

@@ -56,6 +56,11 @@ variables:
     -Denable_tests=false
     -Dbenchmark=disabled
 
+environment:
+  # The WSI layer needs VK_EXT_present_timing revision 3. The headers of the SDK
+  # are older. Only this build sees the newer ones.
+  CPATH: '%{build-root}/vulkan-headers-new/include'
+
 config:
   configure-commands:
     (<):
@@ -99,3 +104,7 @@ sources:
   url: github:nothings/stb.git
   ref: 5736b15f7ea0ffb08dd38af21067c314d6a3aae9
   directory: subprojects/stb
+- kind: tar
+  url: github_files:KhronosGroup/Vulkan-Headers/archive/v1.4.346.tar.gz
+  ref: 5bb77f5d7b460e255a9e51affc00d64354986b55cf577d8eab28529cad01fc80
+  directory: vulkan-headers-new

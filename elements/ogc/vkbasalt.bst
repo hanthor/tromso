@@ -11,6 +11,10 @@ depends:
 - freedesktop-sdk.bst:components/vulkan-icd-loader.bst
 - freedesktop-sdk.bst:components/xorg-lib-x11.bst
 
+environment:
+  # GCC 15 does not include <cstdint> by itself.
+  CXXFLAGS: '%{target_flags} -include cstdint'
+
 sources:
 - kind: git_repo
   url: github:DadSchoorse/vkBasalt.git

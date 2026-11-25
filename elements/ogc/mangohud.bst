@@ -4,6 +4,7 @@ description: MangoHud and mangoapp
 build-depends:
 - freedesktop-sdk.bst:public-stacks/buildsystem-meson.bst
 - freedesktop-sdk.bst:components/glslang.bst
+- freedesktop-sdk.bst:components/mesa-headers.bst
 - freedesktop-sdk.bst:components/python3-mako.bst
 - freedesktop-sdk.bst:components/nlohmann-json.bst
 - freedesktop-sdk.bst:components/unzip.bst
