@@ -3,7 +3,7 @@ name: Build Tromso OGC
 # The Open Gaming Collective variant (docs/OGC.md). A separate workflow, so
 # that it cannot slow or stop the publish of the default image:
 #
-# - it starts after a default build has ended, not inside it;
+# - it has its own schedule, and no job of the default workflow waits for it;
 # - it has its own concurrency group;
 # - it reads the CAS caches of the default build and writes none of them.
 #
@@ -12,10 +12,10 @@ name: Build Tromso OGC
 # filter is allowed (AGENTS.md).
 
 on:
-  workflow_run:
-    workflows: ['Build Tromso (Multi-Runner)']
-    types: [completed]
-    branches: [main]
+  schedule:
+    # Once a day, when the default build of 00:30 UTC has had time to end and
+    # to push its caches. An overlap is harmless: this workflow only reads.
+    - cron: '0 20 * * *'
   pull_request:
     paths:
       - elements/ogc/**
@@ -45,8 +45,6 @@ jobs:
   # time budget. Only the objects that this job adds go to the next job.
   kernel:
     name: Build the OGC kernel and modules
-    # A failed default build leaves no newer cache to build on.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     concurrency:
@@ -147,7 +145,6 @@ jobs:
   # gamescope, MangoHud and the other parts of elements/ogc, without the image.
   userland:
     name: Build the OGC userland
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     concurrency:
@@ -233,7 +230,7 @@ jobs:
     if: >-
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'build-ogc-image'))
       || (github.event_name == 'workflow_dispatch' && inputs.build_image)
-      || github.event_name == 'workflow_run'
+      || github.event_name == 'schedule'
     permissions:
       contents: read
       packages: write
