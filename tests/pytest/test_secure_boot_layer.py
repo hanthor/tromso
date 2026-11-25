@@ -113,6 +113,9 @@ def test_installer_workflow_calls_tunaos_at_one_pinned_commit_and_does_not_publi
     assert set(triggers) == {"workflow_dispatch"}
     assert triggers["workflow_dispatch"]["inputs"]["publish"]["default"] is False
     assert workflow["permissions"] == {}
+    # The called workflow uses the group image-installer-<ref>. The same
+    # group here is a deadlock, and the run fails at start.
+    assert workflow["concurrency"]["group"].startswith("image-installer-caller-")
     job = workflow["jobs"]["e2e"]
     repo, _, ref = job["uses"].partition("@")
     assert repo == "tuna-os/tunaOS/.github/workflows/image-installer.yml"
