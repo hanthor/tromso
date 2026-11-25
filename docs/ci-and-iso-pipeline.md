@@ -83,7 +83,7 @@ dashboard recipes do. This repository keeps no copy of the script.
 rule.
 
 - The default stage is `core`. It contains the shared spine: the bootstrap,
-  LLVM, Rust, Qt, and KDE Frameworks up to `kio`.
+  LLVM, Rust, Qt, and the KDE Frameworks that `kio` needs.
 - A chunk stage has a name from the planner, for example `chunk0-cmake`. The
   log of the `planning` job of a nightly run shows the names. A chunk archive
   is 12 GB to 24 GB, because each one is a full snapshot.
@@ -96,11 +96,25 @@ rule.
 - The recipes cannot push. The script has no push command, and `project.conf`
   has no server with `push: true`.
 
-Sizes on 2026-11-25: the core archive is 13.6 GiB. A download without a
-login took 6 minutes 23 seconds at 36 MiB/s. The extraction writes
-about three times the archive size as small files, so its time
-depends on the disk. Keep 60 GB free for the core stage. With an empty cache,
-`just cache-status` reports 0 of 1216 elements for `oci/tromso.bst`.
+Measured on 2026-11-25 on a machine with 12 cores:
+
+| Step | Result |
+|---|---|
+| Core archive | 13.6 GiB to download, 40 GB on disk |
+| Download without a login | 6 minutes 23 seconds at 36 MiB/s |
+| `just cache-status`, empty cache | 0 of 1216 elements for `oci/tromso.bst` |
+| `just cache-status`, after `just bootstrap-cache` | 541 of 1216 elements (44%) |
+| `just build-local kde/frameworks/kio.bst` | 332 of 333 elements from the cache, 1 built, 177 seconds |
+| Second `just bootstrap-cache` | skips the stage in 1 second |
+
+The extraction writes many small files, so its time depends on
+the disk. It took 41 minutes on that machine while other jobs used the disk.
+Keep 60 GB free for the core stage. The other 675 elements are in the chunk
+archives.
+
+A stray file in a `local` source directory changes cache keys (#539).
+`just cache-status` and `just build-local` stop when they find one, and the
+test suite does not write bytecode.
 
 #### Remote execution (tromso#311)
 
