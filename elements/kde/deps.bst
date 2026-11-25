@@ -122,7 +122,7 @@ depends:
 - kde-linux-deps/efibootmgr.bst
 - freedesktop-sdk.bst:components/kmod.bst
 - freedesktop-sdk.bst:components/tpm2-tss.bst
-- freedesktop-sdk.bst:components/sbsigntools.bst
+- freedesktop-sdk.bst:components/sbsigntools-maybe.bst
 - freedesktop-sdk.bst:components/ccid.bst
 - freedesktop-sdk.bst:components/libva.bst
 - kde-linux-deps/powertop.bst
@@ -325,4 +325,4 @@ depends:
     depends:
       (>):
       - kde-linux-deps/microcode.bst
-      - freedesktop-sdk.bst:components/ovmf.bst
+      - freedesktop-sdk.bst:components/ovmf-maybe.bst
