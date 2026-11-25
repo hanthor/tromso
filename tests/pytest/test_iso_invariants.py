@@ -96,21 +96,24 @@ def test_no_quiet_karg_in_elements():
             assert '"quiet"' not in text, f"{bst} adds quiet karg"
 
 
-def test_high_frequency_workflows_cancel_superseded_runs():
-    """Push bursts once left stale checks and image/ISO builds queued for
-    hours. Newer work on the same ref must replace those obsolete runs."""
+def test_push_runs_keep_their_checks():
+    """A push to main must not evict an in-progress check and report it as
+    cancelled. Cancellation stays limited to pull requests and manual redispatch."""
     workflows = REPO / ".github" / "workflows"
-    names = (
-        "test.yml",
-        "build-iso.yml",
-        "build-tromso-multirunner.yml",
-    )
-    for name in names:
+    expectations = {
+        "test.yml": "github.event_name == 'pull_request'",
+        "build-iso.yml": "github.event_name == 'workflow_dispatch'",
+        "test-luks-install.yml": "github.event_name == 'pull_request'",
+        "test-plain-install.yml": "github.event_name == 'pull_request'",
+    }
+    for name, condition in expectations.items():
         text = (workflows / name).read_text()
         assert "concurrency:" in text, f"{name} lacks a concurrency group"
-        assert re.search(
-            r"cancel-in-progress:\s*true", text
-        ), f"{name} queues superseded same-ref runs"
+        setting = re.search(r"^  cancel-in-progress:\s*(.+)$", text, re.MULTILINE)
+        assert setting, f"{name} lacks cancel-in-progress"
+        assert condition in setting[1], f"{name}: {setting[1]}"
+    multi = (workflows / "build-tromso-multirunner.yml").read_text()
+    assert "cancel-in-progress: false" in multi
 
     iso = (workflows / "build-iso.yml").read_text()
     assert "github.event.workflow_run.head_branch || github.ref_name" in iso, (
@@ -305,6 +308,18 @@ def test_iso_publication_event_gates_fail_closed():
             assert admitted == (expected and (not alias or dated == "success"))
 
 
+def test_iso_is_signed_and_published_only_from_main():
+    """A manual run on another branch must not sign or replace the public ISO."""
+    workflow = (REPO / ".github/workflows/build-iso.yml").read_text()
+    publish = workflow.split("\n  publish:\n", 1)[1]
+    condition = re.search(r"^    if:\s*\$\{\{(.*?)\}\}", publish, re.MULTILINE)[1]
+    assert "github.ref == 'refs/heads/main'" in condition
+    assert "||" not in condition
+    # The self-check is the README command: only a certificate from main passes.
+    verify = publish.split("cosign verify-blob", 1)[1].split("- name:", 1)[0]
+    assert r"build-iso\.yml@refs/heads/main\$" in verify
+
+
 def test_iso_signing_preserves_detached_outputs_with_cosign3():
     """Cosign 3's bundle defaults reject the detached output paths."""
     workflow = (REPO / ".github/workflows/build-iso.yml").read_text()
@@ -361,3 +376,25 @@ def test_iso_signing_has_swap_for_whole_iso_reads():
     swap = workflow.index("- name: Add swap for ISO signing")
     assert "sudo swapon " in workflow[swap:workflow.index("cosign sign-blob")]
     assert swap < workflow.index("- name: Sign ISO (cosign keyless)")
+
+
+def test_webkit_framework_condition_handles_unset_link_target():
+    """WebKit 2.53.1's empty variable expansion stopped main in CMake (#392)."""
+    sources = (REPO / "elements/sdk/webkitgtk.inc").read_text()
+    patch = "patches/webkitgtk/fix-empty-linked-into.patch"
+    assert f"path: {patch}" in sources
+    correction = (REPO / patch).read_text()
+    assert (
+        "+        if ((NOT _linked_into) OR (framework STREQUAL _linked_into) "
+        "OR (NOT _linked_into IN_LIST ${_target}_FRAMEWORKS))"
+    ) in correction
+
+
+def test_stale_publication_fails_after_alert_is_maintained():
+    """A stale build must report red while still maintaining its alert."""
+    workflow = (REPO / ".github/workflows/staleness-check.yml").read_text()
+    marker = "- name: Block release readiness while publication is stale"
+    gate = workflow.split(marker, 1)[1]
+    assert "if: steps.stale.outputs.stale == 'true'" in gate
+    assert "exit 1" in gate
+    assert workflow.index("- name: Open or update stale-build alert") < workflow.index(marker)
