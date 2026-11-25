@@ -75,6 +75,29 @@ just bst-build
 just build
 ```
 
+### Start from the CI cache
+
+A build from an empty cache takes many hours. CI publishes its BuildStream
+cache on GHCR, and you can copy it to your machine first:
+
+```bash
+# Download, verify and extract the core cache (about 14 GB to download)
+just bootstrap-cache
+
+# Show how many elements of the image are now in the local cache
+just cache-status
+
+# Build a target and print what the cache saved
+just build-local kde/frameworks/kio.bst
+```
+
+`just bootstrap-cache` needs no login. It continues a download that stopped,
+checks the SHA-256 of the archive before it extracts it, and skips a stage
+that it already copied. It only reads the registry. After that, BuildStream
+rebuilds only the elements that you changed and the elements that depend on
+them. [The pipeline guide](docs/ci-and-iso-pipeline.md#local-builds-from-the-ci-cache)
+has the details and the sizes.
+
 ### Boot a VM for testing
 
 ```bash
@@ -100,6 +123,9 @@ ssh -p 2222 root@localhost
 | `just test` | Run local BATS and Pytest unit test suites |
 | `just lint` | Run bootc container lint on the built OCI image |
 | `just bst <args>` | Run any arbitrary `bst` command inside the build container |
+| `just bootstrap-cache [stages]` | Copy the published CI cache to the local BuildStream cache |
+| `just cache-status [target]` | Count the elements of a target that are in the local cache |
+| `just build-local [target]` | Build a target and print what the cache saved |
 
 ## CI/CD — multi-runner BuildStream
 

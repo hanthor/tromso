@@ -64,6 +64,44 @@ Free GitHub runners can't hold the whole KDE build, so it's split:
 
 BuildStream settings CI uses live in the checked-in `buildstream-ci.conf`.
 
+#### Local builds from the CI cache
+
+The cache packages `cache-tromso-core` and `cache-tromso-<chunk>` are public.
+`just/local-cache.just` uses them for local builds:
+
+| Recipe | What it does |
+|---|---|
+| `just cache-list [stages]` | Shows the size, date and digest of the published archives |
+| `just bootstrap-cache [stages]` | Downloads, verifies and extracts archives into the local cache |
+| `just cache-status [target]` | Counts the cached elements of a target |
+| `just build-local [target]` | Builds a target and prints the cached and built counts |
+
+The recipes run the `cas_bootstrap.py` script of tuna-os/bst-ci. They get it at
+the commit in `bst_ci_rev` and check its SHA-256 before they run it, as the
+dashboard recipes do. This repository keeps no copy of the script.
+`tests/pytest/test_local_cache_pinned.py` holds the pin and the read-only
+rule.
+
+- The default stage is `core`. It contains the shared spine: the bootstrap,
+  LLVM, Rust, Qt, and KDE Frameworks up to `kio`.
+- A chunk stage has a name from the planner, for example `chunk0-cmake`. The
+  log of the `planning` job of a nightly run shows the names. A chunk archive
+  is 12 GB to 24 GB, because each one is a full snapshot.
+- The archives do not contain sources. BuildStream fetches the sources of the
+  elements that it must build.
+- The cache keys match only with the pinned `bst2` image and without a run of
+  `just generate-image-version`.
+- Set `BST_CACHE_DIR` to use a cache directory that is not
+  `~/.cache/buildstream`. `just bst` and the recipes above obey it.
+- The recipes cannot push. The script has no push command, and `project.conf`
+  has no server with `push: true`.
+
+Sizes on 2026-11-25: the core archive is 13.6 GiB. A download without a
+login took 6 minutes 23 seconds at 36 MiB/s. The extraction writes
+approximately three times the archive size as small files, so its time
+depends on the disk. Keep 60 GB free for the core stage. With an empty cache,
+`just cache-status` reports 0 of 1216 elements for `oci/tromso.bst`.
+
 #### Remote execution (tromso#311)
 
 The whole plan, core, chunk and merge design exists because this repository
