@@ -91,6 +91,11 @@ jobs:
             || echo "::warning::core CAS unavailable: the toolchain is built from source"
           df -h /
 
+      - name: Generate image version
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: just generate-image-version "$BRANCH"
+
       - name: Build the kernel, the modules and their layer
         if: steps.kernel-cache.outputs.cache-hit != 'true'
         env:
@@ -176,6 +181,11 @@ jobs:
             || echo "::warning::core CAS unavailable: the toolchain is built from source"
           df -h /
 
+      - name: Generate image version
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: just generate-image-version "$BRANCH"
+
       - name: Build the parts of the variant
         env:
           BST_FLAGS: --no-interactive --config /src/buildstream-ci.conf -o flavor ogc
@@ -212,3 +222,61 @@ jobs:
           path: logs/
           retention-days: 14
           if-no-files-found: ignore
+
+  # The assembly is that of the default image (build-final.yml): same layers,
+  # same checks, same Secure Boot layer on main. A pull request stops before
+  # this job, because it needs all the caches of the default build. The label
+  # `build-ogc-image` starts it for a pull request. It never pushes there:
+  # build-final.yml pushes on main and stable only.
+  image:
+    needs: [kernel, userland]
+    if: >-
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'build-ogc-image'))
+      || (github.event_name == 'workflow_dispatch' && inputs.build_image)
+      || github.event_name == 'workflow_run'
+    permissions:
+      contents: read
+      packages: write
+      security-events: write # Trivy SARIF upload
+    uses: $/.github/workflows/build-final.yml
+    with:
+      architecture: x86_64
+      runner: ubuntu-24.04
+      channel_ownership: true
+      image_name: tromso-ogc
+      bst_options: -o flavor ogc
+      extra_cas_artifacts: ogc-kernel-cas ogc-userland-cas
+      final_target: oci/tromso.bst
+      # The chunk names of the default plan. A name that is gone costs build
+      # time, never correctness. An empty cache key means `:latest`.
+      matrix_keys: '["chunk0-cmake","chunk1-buildsystem-cmake","chunk2-json-c","chunk3-libaio","chunk4-lvm2-stage1","chunk5-popt","chunk6-cracklib","chunk7-pwquality","chunk8-util-linux-full","chunk9-cryptsetup-base"]'
+      cache_keys: '{}'
+      push_image: ${{ github.event_name != 'workflow_dispatch' || inputs.push_image }}
+
+  # Same as sign_final of the default workflow: no checkout, the digest only.
+  # The Fulcio certificate names this workflow.
+  sign_image:
+    needs: image
+    if: ${{ !cancelled() && needs.image.result == 'success' && needs.image.outputs.digest != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # cosign pushes the signature to GHCR
+      id-token: write # cosign keyless signing (Sigstore/Fulcio OIDC)
+    steps:
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@v2.0.3
+
+      - name: Login to GHCR
+        run: echo "$GITHUB_TOKEN" | oras login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.3
+
+      - name: Sign image (cosign keyless)
+        env:
+          IMAGE_DIGEST: ${{ needs.image.outputs.digest }}
+        run: cosign sign --yes "ghcr.io/${GITHUB_REPOSITORY_OWNER}/tromso-ogc@${IMAGE_DIGEST}"
