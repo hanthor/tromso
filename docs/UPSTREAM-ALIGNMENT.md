@@ -333,21 +333,37 @@ CI build and a boot proof (the live ISO gate and the install tests).
 
 | Step | Change | Changes the image | Proof |
 |---|---|---|---|
-| 0 | This document and the tracking issue | No | Linters |
-| 1 | Add `kde-buildstream` as a pinned junction that no element uses | No | The cache keys of `oci/tromso.bst` do not change |
-| 2 | Start source tracking again for `elements/kde` (Git `master` refs), in groups | Yes | Full build, boot proof |
-| 3 | Update `buildstream-plugins` to 2.8.0 and `buildstream-plugins-community` to 2.4.0 | Yes (all cache keys) | Full build, boot proof |
-| 4 | Move freedesktop-sdk to 26.08. Rebase the patch queue. | Yes (full rebuild) | Full build, boot proof, install tests |
-| 5 | Add a gnome-build-meta junction (`gnome-51`). Replace `elements/sdk` and `elements/sdk-deps` with overrides into the junction. | Yes | Full build, boot proof |
-| 6 | Replace `elements/core-deps` and the boot elements in `elements/kde-linux-system` with the junction. Take bootc from the Dakota override. | Yes | Boot proof, install tests, Secure Boot test |
-| 7 | Remove `elements/core` (GNOME applications that the image does not use) | No, if the graph is equal | Cache key comparison |
-| 8 | Add a freedesktop-sdk-extra junction. Remove the 60 local copies. | Yes | Full build, boot proof |
-| 9 | Take `kexec-disable`, `lockdown-kargs` and the boot layer checks from Dakota | Yes | Boot proof, Secure Boot test |
-| 10 | Switch leaf components to `kde-buildstream.bst:components/`, in groups of about 20 | Yes | Full build, boot proof |
-| 11 | Switch Qt to `kde-buildstream.bst:qt/` (6.12) | Yes (all KDE elements) | Full build, boot proof, session test |
-| 12 | After `kde-buildstream!68` merges: switch Frameworks, then Plasma, then applications to `kde-buildstream.bst:kde/` | Yes | Full build, boot proof, session test |
-| 13 | Rename or remove `kde-linux-deps` and `kde-linux-system` | No, if only names change. But names are part of cache keys. | Full build |
-| 14 | Add junction tracking with review, and a `next` branch | No | CI |
+| 0 ([#522](https://github.com/tuna-os/tromso/pull/522)) | This document and the tracking issue | No | Linters |
+| 1 ([#524](https://github.com/tuna-os/tromso/pull/524)) | Add `kde-buildstream` as a pinned junction that no element uses | No | The cache keys of `oci/tromso.bst` do not change |
+| 2 ([#525](https://github.com/tuna-os/tromso/issues/525)) | Start source tracking again for `elements/kde` (Git `master` refs), in groups | Yes | Full build, boot proof |
+| 3 ([#526](https://github.com/tuna-os/tromso/issues/526)) | Update `buildstream-plugins` to 2.8.0 and `buildstream-plugins-community` to 2.4.0 | Yes (all cache keys) | Full build, boot proof |
+| 4 ([#527](https://github.com/tuna-os/tromso/issues/527)) | Move freedesktop-sdk to 26.08. Rebase the patch queue. | Yes (full rebuild) | Full build, boot proof, install tests |
+| 5 ([#528](https://github.com/tuna-os/tromso/issues/528)) | Add a gnome-build-meta junction (`gnome-51`). Replace `elements/sdk` and `elements/sdk-deps` with overrides into the junction. | Yes | Full build, boot proof |
+| 6 ([#529](https://github.com/tuna-os/tromso/issues/529)) | Replace `elements/core-deps` and the boot elements in `elements/kde-linux-system` with the junction. Take bootc from the Dakota override. | Yes | Boot proof, install tests, Secure Boot test |
+| 7 ([#530](https://github.com/tuna-os/tromso/issues/530)) | Remove `elements/core` (GNOME applications that the image does not use) | No, if the graph is equal | Cache key comparison |
+| 8 ([#531](https://github.com/tuna-os/tromso/issues/531)) | Add a freedesktop-sdk-extra junction. Remove the 60 local copies. | Yes | Full build, boot proof |
+| 9 ([#532](https://github.com/tuna-os/tromso/issues/532)) | Take `kexec-disable`, `lockdown-kargs` and the boot layer checks from Dakota | Yes | Boot proof, Secure Boot test |
+| 10 ([#533](https://github.com/tuna-os/tromso/issues/533)) | Switch leaf components to `kde-buildstream.bst:components/`, in groups of about 20 | Yes | Full build, boot proof |
+| 11 ([#534](https://github.com/tuna-os/tromso/issues/534)) | Switch Qt to `kde-buildstream.bst:qt/` (6.12) | Yes (all KDE elements) | Full build, boot proof, session test |
+| 12 ([#535](https://github.com/tuna-os/tromso/issues/535)) | After `kde-buildstream!68` merges: switch Frameworks, then Plasma, then applications to `kde-buildstream.bst:kde/` | Yes | Full build, boot proof, session test |
+| 13 ([#536](https://github.com/tuna-os/tromso/issues/536)) | Rename or remove `kde-linux-deps` and `kde-linux-system` | No, if only names change. But names are part of cache keys. | Full build |
+| 14 ([#537](https://github.com/tuna-os/tromso/issues/537)) | Add junction tracking with review, and a `next` branch | No | CI |
+
+Status of step 1 ([tuna-os/tromso#524](https://github.com/tuna-os/tromso/pull/524)):
+
+- The junction is `kde-buildstream.bst`, pinned at `ee0596e`.
+- The list of names and cache keys of `oci/tromso.bst` has 1216 lines. It is
+  identical on `main` and on the branch.
+- A trial target does not resolve yet. BuildStream fetches the upstream
+  project and its freedesktop-sdk 26.08 junction, and the patch queue
+  applies. Then BuildStream stops, because two projects load
+  `buildstream-plugins-community` at different versions. Step 3 must add a
+  plugin override to the junction.
+
+A local hazard, found in step 1: `pytest` writes `__pycache__` into
+`files/kde-linux-system/generate-initramfs`. That directory is a `local`
+source. Thus, 11 cache keys change in a local checkout after a test run. CI
+does not have this problem. Remove the directory before a local build.
 
 Order rules:
 
