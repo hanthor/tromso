@@ -30,6 +30,8 @@ workflows:
     '.github/workflows/drop-bot-review-requests.yml': []
     '.github/workflows/image-installer.yml': []
     '.github/workflows/promote-stable.yml': []
+    '.github/workflows/proto-installer-upstream.yml':
+        - 'actions/checkout@v7.0.1'
     '.github/workflows/rollback-stable.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/scorecard.yml':

@@ -216,7 +216,7 @@ jobs:
           FINAL_TARGET: ${{ inputs.final_target }}
         run: |
           # The merged CAS and the squashed image do not fit on one runner
-          # together (xfce-linux#159 hit exactly this). Take the artifact out
+          # together (tuna-os/brussels#159 hit exactly this). Take the artifact out
           # of the cache, then drop the cache; export works from .build-out.
           df -h /
           rm -rf .build-out

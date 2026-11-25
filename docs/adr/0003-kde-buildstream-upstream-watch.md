@@ -44,3 +44,15 @@ full graph build and QEMU boot test before you change the production project.
 First submit additions specific to Tromso, such as Plymouth and core boot
 dependencies, to the upstream project. Otherwise, record them explicitly in
 the trial delta.
+
+## Evaluation of 2026-11-25
+
+[UPSTREAM-ALIGNMENT.md](../UPSTREAM-ALIGNMENT.md) records a new survey of the
+upstream project. Gate 1 is not met on `master`, but the open merge request
+`kde-buildstream!68` meets it. Gate 2 is not met. Gate 3 is partly met.
+
+The decision stays: the production build does not switch now. The new plan
+adds preparation steps that have value without the gates. It also adds a
+pinned junction that no element uses, as the "parallel junction" for the
+trial. [tuna-os/tromso#521](https://github.com/tuna-os/tromso/issues/521)
+records the steps.
