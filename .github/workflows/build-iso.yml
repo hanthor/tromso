@@ -245,7 +245,7 @@ jobs:
   publish:
     name: Publish verified ISO
     needs: build-and-publish
-    if: ${{ inputs.skip_upload != true && github.event_name != 'pull_request' }}
+    if: ${{ inputs.skip_upload != true && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     permissions:
       actions: read
@@ -319,7 +319,7 @@ jobs:
           cosign verify-blob "$ISO" \
             --certificate "${ISO}.cert" \
             --signature "${ISO}.sig" \
-            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/build-iso\.yml@" \
+            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/build-iso\.yml@refs/heads/main\$" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com
           echo "sig_path=${ISO}.sig" >> "$GITHUB_OUTPUT"
           echo "cert_path=${ISO}.cert" >> "$GITHUB_OUTPUT"

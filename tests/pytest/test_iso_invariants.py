@@ -305,6 +305,18 @@ def test_iso_publication_event_gates_fail_closed():
             assert admitted == (expected and (not alias or dated == "success"))
 
 
+def test_iso_is_signed_and_published_only_from_main():
+    """A manual run on another branch must not sign or replace the public ISO."""
+    workflow = (REPO / ".github/workflows/build-iso.yml").read_text()
+    publish = workflow.split("\n  publish:\n", 1)[1]
+    condition = re.search(r"^    if:\s*\$\{\{(.*?)\}\}", publish, re.MULTILINE)[1]
+    assert "github.ref == 'refs/heads/main'" in condition
+    assert "||" not in condition
+    # The self-check is the README command: only a certificate from main passes.
+    verify = publish.split("cosign verify-blob", 1)[1].split("- name:", 1)[0]
+    assert r"build-iso\.yml@refs/heads/main\$" in verify
+
+
 def test_iso_signing_preserves_detached_outputs_with_cosign3():
     """Cosign 3's bundle defaults reject the detached output paths."""
     workflow = (REPO / ".github/workflows/build-iso.yml").read_text()
