@@ -4,9 +4,14 @@
 # INERT ON PURPOSE: no element in this repository depends on this junction,
 # so it does not change any cache key or the published image. It pins the
 # upstream state that docs/UPSTREAM-ALIGNMENT.md compares against, and it is
-# the "parallel junction" for trial builds that ADR 0003 asks for:
+# the "parallel junction" for trial builds that ADR 0003 asks for.
 #
-#   just bst show kde-buildstream.bst:qt/qtbase.bst
+# A trial target does not resolve yet. `just bst show
+# kde-buildstream.bst:qt/qtbase.bst` fetches this project and its nested
+# freedesktop-sdk 26.08 (the patch queue applies), then stops with "Project
+# 'buildstream-plugins-community' was loaded in multiple contexts": Tromsø
+# pins 2.3.0, the upstream pins a branch commit. The plugin update (step 3 of
+# tuna-os/tromso#521) must add a plugin override here before any trial build.
 #
 # tests/pytest/test_kde_buildstream_junction.py keeps it inert. The first
 # element that uses it must change that test in the same pull request
