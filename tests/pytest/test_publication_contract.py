@@ -238,6 +238,21 @@ OTHER_REFS = (
 )
 
 
+def test_no_checkout_of_an_outside_repository_at_a_moving_ref():
+    """actions.lock pins `uses:`; nothing else pins a `repository:` checkout."""
+    offenders = []
+    for path in sorted(WORKFLOWS.glob("*.yml")):
+        for job in (yaml.safe_load(path.read_text()).get("jobs") or {}).values():
+            for step in job.get("steps") or []:
+                inputs = step.get("with") or {}
+                repository = str(inputs.get("repository", ""))
+                if not repository or repository.startswith("tuna-os/"):
+                    continue
+                if not re.fullmatch(r"[0-9a-f]{40}", str(inputs.get("ref", ""))):
+                    offenders.append(f"{path.name}: {step.get('name')}")
+    assert not offenders, f"{offenders} check out an outside repository without a commit SHA"
+
+
 def _signer(workflow, ref, repo="tuna-os/tromso"):
     return f"https://github.com/{repo}/.github/workflows/{workflow}@{ref}"
 
