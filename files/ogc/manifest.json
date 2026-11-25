@@ -12,9 +12,9 @@
   ],
   "in_tree_modules": [
     "ntsync", "hid-asus-ally", "hid-lenovo-go", "hid-lenovo-go-s", "hid-msi",
-    "hid-oxp", "hid-ayaneo", "hid-gpd", "zotac-zone-hid", "steamdeck",
+    "hid-oxp", "hid-ayaneo", "zotac-zone-hid", "steamdeck",
     "leds-steamdeck", "leds-valve", "asus-armoury", "ayaneo-ec",
-    "snd-soc-aw87xxx", "amdxdna", "amdgpu", "kyber-iosched", "bfq", "tcp_bbr"
+    "snd-soc-aw87xxx", "amdxdna", "amdgpu", "tcp_bbr"
   ],
   "forbidden_modules": ["ryzen_smu", "wl"],
   "files": [],
