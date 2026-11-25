@@ -10,8 +10,12 @@
 # kde-buildstream.bst:qt/qtbase.bst` fetches this project and its nested
 # freedesktop-sdk 26.08 (the patch queue applies), then stops with "Project
 # 'buildstream-plugins-community' was loaded in multiple contexts": Tromsø
-# pins 2.3.0, the upstream pins a branch commit. The plugin update (step 3 of
-# tuna-os/tromso#521) must add a plugin override here before any trial build.
+# pins 2.3.0, the upstream pins a branch commit. An override of both plugin
+# junctions to the Tromsø ones was tried and is not enough: 2.3.0 "does not
+# declare a source plugin named: 'anitya'". So tuna-os/tromso#526 must first
+# move buildstream-plugins-community to a version with every source kind the
+# upstream project.conf lists (anitya, cargo2, cpan, git_module, git_repo,
+# go_mod_vendor, patch_queue, pypi, zip), then add the two overrides here.
 #
 # tests/pytest/test_kde_buildstream_junction.py keeps it inert. The first
 # element that uses it must change that test in the same pull request
