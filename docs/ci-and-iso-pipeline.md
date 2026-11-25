@@ -16,6 +16,18 @@ The pipeline signs artifacts with cosign keyless, not the legacy Secure Boot Mak
 This guard prevents the regression in #219 that accepted public keys as
 signature inputs. It does not audit signatures inside existing artifacts.
 
+## Secure Boot layer and the image installer
+
+The publish path of `build-final.yml` adds the Secure Boot files to the image
+as one layer, before the push. BuildStream does not sign, and the key guard
+above does not change. Read [Secure Boot](secure-boot.md) for the chain, the
+limits and the test state.
+
+`image-installer.yml` calls the 7-stage installer workflow of tuna-os/tunaOS
+for the cell `tromso:kde`. It is dispatch-only, and it does not publish by
+default. The ISO workflows below stay the release path
+([#516](https://github.com/tuna-os/tromso/issues/516)).
+
 ## Build chain
 
 ```

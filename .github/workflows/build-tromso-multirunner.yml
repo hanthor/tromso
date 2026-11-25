@@ -153,6 +153,8 @@ jobs:
       enable_remote_execution: true
     secrets:
       CASD_CLIENT_KEY: ${{ secrets.CASD_CLIENT_KEY }}
+      TUNAOS_SB_KEY: ${{ secrets.TUNAOS_SB_KEY }}
+      TUNAOS_SB_CERT: ${{ secrets.TUNAOS_SB_CERT }}
 
   # No checkout: this job runs no repository code. It only signs the digest
   # build_final pushed.

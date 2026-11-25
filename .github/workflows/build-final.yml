@@ -62,6 +62,14 @@ on:
       CASD_CLIENT_KEY:
         description: 'mTLS client key for the CASD cache and executor'
         required: false
+      # Secure Boot signing (docs/secure-boot.md). Only the publish step that
+      # adds the Secure Boot layer reads them, on main and stable.
+      TUNAOS_SB_KEY:
+        description: 'PEM private key of the tunaOS Secure Boot certificate'
+        required: false
+      TUNAOS_SB_CERT:
+        description: 'PEM tunaOS Secure Boot certificate'
+        required: false
     outputs:
       digest:
         description: 'Manifest digest of the pushed image; empty when nothing was pushed'
@@ -282,6 +290,50 @@ jobs:
           path: logs/
           retention-days: 7
           if-no-files-found: ignore
+
+      # Secure Boot (docs/secure-boot.md, tuna-os/tromso#516). The key must
+      # not enter BuildStream: the CAS archives are public. So the publish
+      # path adds the signed files as one layer, after the build and before
+      # the push, and every later step (push, cosign, promotion) sees the
+      # digest that has the layer. Same condition as the push: a pull request
+      # and a branch run never reach these steps. x86_64 only: the shim pin
+      # has no aarch64 row, and aarch64 images are dispatch-only (#88).
+      - name: Checkout the Secure Boot tooling
+        if: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stable') && inputs.push_image && inputs.architecture == 'x86_64' }}
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: tuna-os/tunaOS
+          # tuna-os/tunaOS#4963 (installer-medium/secure-boot). Move this
+          # commit only with a review of ci-sign.sh and image/sign-image.sh.
+          ref: 71611debb0e3b859d2826c30bc6c128046d56c84
+          path: .tunaos-secure-boot
+          sparse-checkout: installer-medium/secure-boot
+          persist-credentials: false
+
+      - name: Add the Secure Boot layer
+        if: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stable') && inputs.push_image && inputs.architecture == 'x86_64' }}
+        env:
+          IMAGE_REF: ${{ steps.export.outputs.image_ref }}
+          TUNAOS_SB_KEY: ${{ secrets.TUNAOS_SB_KEY }}
+          TUNAOS_SB_CERT: ${{ secrets.TUNAOS_SB_CERT }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y --no-install-recommends sbsigntool rpm2cpio cpio
+          # A publish with no key must fail: an image with no signature must
+          # not replace a signed one on the same tag.
+          sudo --preserve-env=TUNAOS_SB_KEY,TUNAOS_SB_CERT \
+            .tunaos-secure-boot/installer-medium/secure-boot/image/sign-image.sh \
+            "localhost/${IMAGE_REF}" "localhost/${IMAGE_REF}"
+
+      - name: Verify the Secure Boot layer
+        if: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stable') && inputs.push_image && inputs.architecture == 'x86_64' }}
+        env:
+          IMAGE_REF: ${{ steps.export.outputs.image_ref }}
+        run: |
+          set -euo pipefail
+          # No key here: sbverify against the committed certificate.
+          sudo .tunaos-secure-boot/installer-medium/secure-boot/image/verify-image.sh \
+            "localhost/${IMAGE_REF}"
 
       - name: Login to GHCR (podman)
         if: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stable') && inputs.push_image }}

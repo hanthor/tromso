@@ -1,0 +1,53 @@
+# Image-based installer for the cell tromso:kde (tuna-os/tromso#516,
+# tuna-os/tunaOS#4905, ADR 0018 there).
+#
+# This workflow copies nothing. It calls the 7-stage workflow of
+# tuna-os/tunaOS at a pinned commit. That workflow builds the hybrid medium
+# from ghcr.io/tuna-os/tromso:latest with the tunaOS installer-medium/
+# scripts, boots the exact bytes as a CD-ROM and as a USB disk under QEMU,
+# runs the seven stages, and publishes the installer OCI image by digest only
+# after all stages pass.
+#
+# NOT a gate and not a release path yet: dispatch only, publish off by
+# default. The ISO workflows (build-iso.yml, test-*-install.yml) stay the
+# release path until the ADR 0018 exit criteria hold. Turn `publish` on only
+# after one green run.
+name: Image installer (tromso:kde)
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish ghcr.io/tuna-os/tromso-installer by digest after all seven stages pass"
+        required: false
+        default: false
+        type: boolean
+      candidate:
+        description: "Image digest (sha256:...) for the switch stage; empty leaves stage 7 a marker"
+        required: false
+        default: ""
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: image-installer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: tromso:kde
+    permissions:
+      contents: read
+      packages: write # the installer image, only with publish
+      id-token: write # keyless cosign for that image
+      actions: read
+    # tuna-os/tunaOS#4962. `tunaos_ref` must be the same commit as this line:
+    # the called workflow checks out its own scripts by that input.
+    uses: tuna-os/tunaOS/.github/workflows/image-installer.yml@9bff71bdc6543fcba41e3e855176c29435c065f3
+    with:
+      cell: tromso:kde
+      tunaos_ref: 9bff71bdc6543fcba41e3e855176c29435c065f3
+      dest: ghcr.io/tuna-os/tromso-installer
+      candidate: ${{ inputs.candidate }}
+      publish: ${{ inputs.publish }}
