@@ -399,8 +399,10 @@ Status of step 1 ([tuna-os/tromso#524](https://github.com/tuna-os/tromso/pull/52
 - A trial target does not resolve yet. BuildStream fetches the upstream
   project and its freedesktop-sdk 26.08 junction, and the patch queue
   applies. Then BuildStream stops, because two projects load
-  `buildstream-plugins-community` at different versions. Step 3 must add a
-  plugin override to the junction.
+  `buildstream-plugins-community` at different versions.
+- A trial with an override of the two plugin junctions also stops. Version
+  2.3.0 of `buildstream-plugins-community` has no `anitya` source. Thus,
+  step 3 must first update the plugins, and then add the overrides.
 
 A local hazard, found in step 1: `pytest` writes `__pycache__` into
 `files/kde-linux-system/generate-initramfs`. That directory is a `local`
