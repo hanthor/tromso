@@ -44,10 +44,10 @@ jobs:
       actions: read
     # tuna-os/tunaOS#4962. `tunaos_ref` must be the same commit as this line:
     # the called workflow checks out its own scripts by that input.
-    uses: tuna-os/tunaOS/.github/workflows/image-installer.yml@9bff71bdc6543fcba41e3e855176c29435c065f3
+    uses: tuna-os/tunaOS/.github/workflows/image-installer.yml@c1f1b08c71df9b80822884317c3ce05e4a8658a9
     with:
       cell: tromso:kde
-      tunaos_ref: 9bff71bdc6543fcba41e3e855176c29435c065f3
+      tunaos_ref: c1f1b08c71df9b80822884317c3ce05e4a8658a9
       dest: ghcr.io/tuna-os/tromso-installer
       candidate: ${{ inputs.candidate }}
       publish: ${{ inputs.publish }}

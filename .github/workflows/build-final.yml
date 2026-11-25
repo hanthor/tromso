@@ -305,7 +305,7 @@ jobs:
           repository: tuna-os/tunaOS
           # tuna-os/tunaOS#4963 (installer-medium/secure-boot). Move this
           # commit only with a review of ci-sign.sh and image/sign-image.sh.
-          ref: 71611debb0e3b859d2826c30bc6c128046d56c84
+          ref: 5ccce0d13017a103cae8975b7a31984140bd8285
           path: .tunaos-secure-boot
           sparse-checkout: installer-medium/secure-boot
           persist-credentials: false
