@@ -30,8 +30,11 @@ on:
 
 permissions: {}
 
+# Not the group name of the called workflow (image-installer-<ref>): a caller
+# and a called workflow with one group deadlock, and the run fails at start
+# (run 45554612121 in tuna-os/tromso).
 concurrency:
-  group: image-installer-${{ github.ref }}
+  group: image-installer-caller-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
