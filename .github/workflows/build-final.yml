@@ -338,6 +338,18 @@ jobs:
           sudo python3 scripts/check-ogc-image.py "$mnt"
           sudo podman image umount "localhost/${IMAGE_REF}" >/dev/null
 
+      # Nothing else boots this image yet (no ISO), so the gate is here.
+      - name: Boot the OGC image
+        if: inputs.image_name == 'tromso-ogc'
+        env:
+          IMAGE_REF: ${{ steps.export.outputs.image_ref }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf imagemagick
+          df -h /
+          mkdir -p logs
+          sudo scripts/ogc-boot-test.sh "localhost/${IMAGE_REF}" logs/boot
+
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v7.0.2

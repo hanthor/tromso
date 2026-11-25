@@ -34,6 +34,7 @@ BST_FLAGS="--no-interactive" just bst show --deps all \
 It reads the CAS caches of the default build and does not write them. It calls
 `build-final.yml`. So the variant has the same layers, lint and scan. It has the
 same whiteout and capability checks, and the same Secure Boot layer.
+
 `scripts/check-ogc-image.py` then checks the variant against
 `files/ogc/manifest.json`. In a pull request the label `build-ogc-image` starts
 the image build. A pull request never publishes.
